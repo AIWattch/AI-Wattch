@@ -4,10 +4,6 @@ Last updated: January 14, 2025
 
 ## What Information We Collect
 - Text content from your conversations with AI chatbots is analyzed locally for token counting
-- IP address for grid carbon intensity mapping (user opt-in)
-- No data is stored
-- No personal information is collected
-- No conversation content is stored or transmitted
 
 ## How It Works
 - The extension reads chat content directly from the webpage
@@ -15,6 +11,9 @@ Last updated: January 14, 2025
 - All calculations happen locally in your browser
 - No data persistence
 - No data is sent to external servers
+- No data is stored
+- No personal information is collected
+- No conversation content is stored or transmitted
 
 ## Third Party Access
 - No data is shared with third parties
