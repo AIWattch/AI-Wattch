@@ -1,4 +1,5 @@
-# AI Wattch
+# Test
+# AI Wattch 
 A Chrome extension that tracks your emissions while using ChatGPT.
 Here's a short [demo video](https://www.youtube.com/watch?v=594hVECkKlc)
 
