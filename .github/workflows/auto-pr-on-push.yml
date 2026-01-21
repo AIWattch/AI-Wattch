@@ -1,0 +1,52 @@
+name: Auto-create PR on branch push
+
+on:
+  push:
+    # Runs for any branch except main
+    branches-ignore: ['main']
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  create-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create PR if none exists
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const headRef = context.ref.replace('refs/heads/','');
+            if (!headRef || headRef === 'main') {
+              core.info('No branch or branch is main — exit.');
+              return;
+            }
+
+            // Check for an existing open PR from this branch
+            const existing = await github.rest.pulls.list({
+              owner, repo,
+              head: `${owner}:${headRef}`,
+              state: 'open'
+            });
+
+            if (existing.data.length > 0) {
+              core.info(`Open PR already exists: ${existing.data[0].html_url}`);
+              return;
+            }
+
+            // Create PR into main
+            const title = `Auto PR: ${headRef}`;
+            const body = `This pull request was auto-created from a push to branch \`${headRef}\`. Please review and approve.`;
+            const pr = await github.rest.pulls.create({
+              owner, repo,
+              head: headRef,
+              base: 'main',
+              title,
+              body
+            });
+
+            core.info(`Created PR: ${pr.data.html_url}`);

@@ -1,0 +1,69 @@
+{
+    "manifest_version": 3,
+    "name": "AI Wattch - Track Your AI Footprint",
+    "version": "1.0.11",
+    "description": "Discover how your AI usage impacts the planet. Measure, compare, and optimize your AI footprint in real time.",
+    "permissions": [
+        "storage"
+    ],
+    "host_permissions": [
+        "https://chat.openai.com/*",
+        "https://chatgpt.com/*",
+        "https://claude.ai/*"
+    ],
+    "background": {
+        "service_worker": "src/background/index.ts",
+        "type": "module"
+    },
+    "content_scripts": [
+        {
+            "matches": [
+                "https://chat.openai.com/*",
+                "https://chatgpt.com/*",
+                "https://claude.ai/*"
+            ],
+            "js": [
+                "src/content/content.ts"
+            ],
+            "run_at": "document_end",
+            "type": "module"
+        }
+    ],
+    "action": {
+        "default_title": "AI Wattch",
+        "default_icon": {
+            "16": "src/assets/logo/logo-16.png",
+            "32": "src/assets/logo/logo-32.png",
+            "48": "src/assets/logo/logo-48.png",
+            "64": "src/assets/logo/logo-64.png",
+            "96": "src/assets/logo/logo-96.png",
+            "128": "src/assets/logo/logo-128.png"
+        }
+    },
+    "icons": {
+        "16": "src/assets/logo/logo-16.png",
+        "32": "src/assets/logo/logo-32.png",
+        "48": "src/assets/logo/logo-48.png",
+        "64": "src/assets/logo/logo-64.png",
+        "96": "src/assets/logo/logo-96.png",
+        "128": "src/assets/logo/logo-128.png"
+    },
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "assets/*",
+                "src/assets/fonts/Outfit-400.ttf",
+                "src/assets/fonts/Outfit-500.ttf",
+                "src/assets/fonts/Outfit-600.ttf",
+                "src/assets/fonts/Outfit-700.ttf",
+                "src/content/noAccess.html"
+            ],
+            "matches": [
+                "<all_urls>"
+            ]
+        }
+    ],
+    "content_security_policy": {
+        "extension_pages": "script-src 'self'; object-src 'self'"
+    }
+}
