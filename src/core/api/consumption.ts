@@ -9,6 +9,8 @@ import {
 } from "../../shared/types";
 
 const API_BASE_URL = "https://otm-api.antarctica.io/v1/ai-wattch";
+// const API_BASE_URL = "https://otm-api-dev.antarctica.io/v1/ai-wattch";
+// const API_BASE_URL = "http://localhost:3000/v1/ai-wattch";
 
 let cooldownUntil = 0;
 let debounceTimeout: ReturnType<typeof setTimeout> | null = null;

@@ -339,6 +339,8 @@ const initBackground = async (): Promise<void> => {
       return true; // Keep channel open for async responses
     });
 
+    chrome.action.onClicked.addListener(handleIconClick);
+
     // Auto-detect location if not set
     const settings = await loadSettings();
     if (

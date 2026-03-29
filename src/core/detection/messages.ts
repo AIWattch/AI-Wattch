@@ -139,12 +139,22 @@ const checkIfResponseCompleted = (node: Node, platform: SupportedPlatform) => {
     return false;
   }
 
-  // adding one more additional check since in claude due some change data-state closed is available on some other element as well
+  // Adding one more special case for chatgpt first message in new chat
   if (
-    node.children[0].getAttribute("data-state") === "closed" &&
-    node.tagName !== "LI"
+    node.matches('span[data-state="closed"]') &&
+    node.querySelector('button[aria-label="Start Voice"]') &&
+    platform === "chatgpt"
   ) {
-    console.log("DEBUG: Came here 3");
+    return true;
+  }
+
+  // Adding one more special case for claude first message in new chat
+  if (
+    node.tagName === "DIV" &&
+    node.querySelector('button[data-state="closed"]') !== null &&
+    node.children?.[0]?.children?.[1]?.tagName === "BUTTON" &&
+    platform === "claude"
+  ) {
     return true;
   }
 
@@ -209,16 +219,16 @@ const ProcessResponse = (platform: SupportedPlatform) => {
     }
   } else if (platform === "claude") {
     const allOutputNode = document.querySelectorAll(
-      ".font-claude-response"
+      ".font-claude-response",
     ) as NodeListOf<HTMLElement>;
     const allInputNode = document.querySelectorAll(
-      "[data-testid='user-message']"
+      "[data-testid='user-message']",
     ) as NodeListOf<HTMLElement>;
 
     if (allOutputNode.length !== 0 && allInputNode.length !== 0) {
       const codeBlocks = hasCodeBlock
         ? (document.querySelectorAll(
-            ".code-block__code"
+            ".code-block__code",
           ) as NodeListOf<HTMLElement>)
         : [];
 
@@ -230,7 +240,7 @@ const ProcessResponse = (platform: SupportedPlatform) => {
         sendObject.outputTokens += codeBlockTokens;
       }
       // the last output node is the second to last as last one is selector
-      const outputNode = allOutputNode[allOutputNode.length - 2];
+      const outputNode = allOutputNode[allOutputNode.length - 1];
       const inputNode = allInputNode[allInputNode.length - 1];
       const outputText = outputNode.innerText;
       const inputText = inputNode.innerText;
@@ -256,7 +266,7 @@ const ProcessResponse = (platform: SupportedPlatform) => {
 // Monitor for new messages with enhanced detection
 export const createMessageObserver = (
   platform: SupportedPlatform,
-  onNewMessage: (message: QueryMetric) => void
+  onNewMessage: (message: QueryMetric) => void,
 ): MutationObserver => {
   console.log("👁️ AI Wattch: Creating message observer", { platform });
 
@@ -268,6 +278,8 @@ export const createMessageObserver = (
       allowedToTrack = !!settings.allowedToTrack;
     }
 
+    console.log("Allowed To Track ,", allowedToTrack);
+
     if (!allowedToTrack) return;
 
     mutations.forEach((mutation) => {
@@ -275,10 +287,9 @@ export const createMessageObserver = (
         if (
           platform === "claude" &&
           [...document.querySelectorAll('[class="text-sm"]')].find((e) =>
-            e.textContent.includes("Session limit reached")
+            e.textContent.includes("Session limit reached"),
           )
         ) {
-          console.log("Hellooooo");
           return;
         }
         if (mutation.addedNodes.length) {

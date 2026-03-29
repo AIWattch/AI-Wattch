@@ -1,9 +1,29 @@
-export const LLM_MODELS = [
+import { ModelInfo } from "../shared/types";
+
+export const LLM_MODELS: ModelInfo[] = [
+  {
+    modelName: "GPT-5.4",
+    detectionName: "5.4,5.4 Thinking,5.4 Instant,5.4 Pro",
+    platform: "chatgpt",
+    modelId: "gpt-5.4",
+  },
+  {
+    modelName: "GPT-5.3",
+    detectionName: "5.3,5.3 Thinking,5.3 Instant,5.3 Pro",
+    platform: "chatgpt",
+    modelId: "gpt-5.3",
+  },
   {
     modelName: "GPT-5.2",
     detectionName: "5.2,5.2 Thinking,5.2 Instant,5.2 Pro",
     platform: "chatgpt",
     modelId: "gpt-5.2",
+  },
+  {
+    modelName: "GPT-5.1",
+    detectionName: "5.1,5.1 Thinking,5.1 Instant,5.1 Pro",
+    platform: "chatgpt",
+    modelId: "gpt-5.1",
   },
   {
     modelName: "GPT-5",
@@ -12,10 +32,16 @@ export const LLM_MODELS = [
     modelId: "gpt-5",
   },
   {
-    modelName: "GPT-5.1",
-    detectionName: "5.1,5.1 Thinking,5.1 Instant,5.1 Pro",
+    modelName: "GPT-4.1",
+    detectionName: "4.1",
     platform: "chatgpt",
-    modelId: "gpt-5.1",
+    modelId: "gpt-4.1",
+  },
+  {
+    modelName: "GPT-4.1 mini",
+    detectionName: "4.1 mini",
+    platform: "chatgpt",
+    modelId: "gpt-4.1-mini",
   },
   {
     modelName: "GPT-4",
@@ -35,18 +61,38 @@ export const LLM_MODELS = [
     platform: "chatgpt",
     modelId: "gpt-4o-mini",
   },
-  {
-    modelName: "GPT-4.1 mini",
-    detectionName: "4.1 mini",
-    platform: "chatgpt",
-    modelId: "gpt-4.1-mini",
-  },
-  {
-    modelName: "GPT-4.1",
-    detectionName: "4.1",
-    platform: "chatgpt",
-    modelId: "gpt-4.1",
-  },
+
+  // {
+  //   modelName: "Gemini 3.1 Pro",
+  //   detectionName: "Gemini 3.1 Pro",
+  //   platform: "gemini",
+  //   modelId: "gemini-3.1-pro",
+  // },
+  // {
+  //   modelName: "Gemini 3 Flash",
+  //   detectionName: "Gemini 3 Flash",
+  //   platform: "gemini",
+  //   modelId: "gemini-3-flash",
+  // },
+  // {
+  //   modelName: "Gemini 3 Pro Preview",
+  //   detectionName: "Gemini 3 Pro Preview",
+  //   platform: "gemini",
+  //   modelId: "gemini-3-pro-preview",
+  // },
+  // {
+  //   modelName: "Gemini 2.5 Flash-Lite",
+  //   detectionName: "Gemini 2.5 Flash Lite",
+  //   platform: "gemini",
+  //   modelId: "gemini-2.5-flash-lite",
+  // },
+  // {
+  //   modelName: "Gemini 2.5 Flash",
+  //   detectionName: "Gemini 2.5 Flash",
+  //   platform: "gemini",
+  //   modelId: "gemini-2.5-flash",
+  // },
+
   {
     modelName: "Claude Opus 3",
     detectionName: "Opus 3",
@@ -64,6 +110,18 @@ export const LLM_MODELS = [
     detectionName: "Opus 4.1",
     platform: "claude",
     modelId: "claude-opus-4.1",
+  },
+  {
+    modelName: "Claude Opus 4.5",
+    detectionName: "Opus 4.5",
+    platform: "claude",
+    modelId: "claude-opus-4.5",
+  },
+  {
+    modelName: "Claude Opus 4.6",
+    detectionName: "Opus 4.6",
+    platform: "claude",
+    modelId: "claude-opus-4.6",
   },
   {
     modelName: "Claude-3.5 Haiku",
@@ -89,7 +147,6 @@ export const LLM_MODELS = [
     platform: "claude",
     modelId: "claude-4-sonnet",
   },
-
   {
     modelName: "Claude-4.5 Sonnet",
     detectionName: "Sonnet 4.5",
@@ -97,15 +154,15 @@ export const LLM_MODELS = [
     modelId: "claude-4.5-sonnet",
   },
   {
-    modelName: "Claude Opus 4.5",
-    detectionName: "Opus 4.5",
+    modelName: "Claude Sonnet 4.6",
+    detectionName: "Sonnet 4.6",
     platform: "claude",
-    modelId: "claude-opus-4.5",
+    modelId: "claude-sonnet-4.6",
   },
 ];
 
 export const getDefaultModel = (platform?: "chatgpt" | "claude") => {
-  return platform === "chatgpt" ? LLM_MODELS[0] : LLM_MODELS[6];
+  return platform === "chatgpt" ? LLM_MODELS[1] : LLM_MODELS[20];
 };
 
 export const getAllModelsByPlatform = (platform: "chatgpt" | "claude") => {
@@ -113,8 +170,8 @@ export const getAllModelsByPlatform = (platform: "chatgpt" | "claude") => {
 };
 
 export const DEFAULT_DETECTION_MODEL = {
-  chatgpt: LLM_MODELS[0],
-  claude: LLM_MODELS[10],
+  chatgpt: LLM_MODELS[1],
+  claude: LLM_MODELS[20],
 };
 
 export const DEFAULT_TOKEN_ESTIMATION = {

@@ -1,5 +1,5 @@
 import React from "react";
-import { Card } from "../../../shared/components/Card";
+
 import { WaterDropIcon } from "../../../icons/WaterDropIcon";
 import { LightBulbIcon } from "../../../icons/LightBulbIcon";
 import { SmartphoneIcon } from "../../../icons/SmartphoneIcon";
@@ -20,6 +20,11 @@ export const ImpactCard: React.FC<{
     (consumptionData.chatgptConsumption?.metrics.smartphoneCharges || 0) +
     (consumptionData.claudeConsumption?.metrics.smartphoneCharges || 0);
 
+  const waterConsumption =
+    totalWaterConsumption > 1000
+      ? `${(totalWaterConsumption / 1000).toFixed(2)}L`
+      : `${totalWaterConsumption.toFixed(0)}ml`;
+
   return (
     <div className="mt-3 bg-white rounded-lg p-2">
       <h3 className="text-sm font-medium text-obsidian">Sessions Impact</h3>
@@ -32,7 +37,7 @@ export const ImpactCard: React.FC<{
         <span className="text-xs font-normal text-grey-600">
           Consuming{" "}
           <span className="font-semibold text-obsidian">
-            {totalWaterConsumption.toFixed(0)}L
+            {waterConsumption}
           </span>{" "}
           of water.
         </span>
