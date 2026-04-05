@@ -45,6 +45,24 @@ export const TipsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       isExpanded: false,
     },
     {
+      id: "5",
+      title: "Choose your verb carefully",
+      content: (
+        <>
+          Words like{" "}
+          <span className="text-glacier-600">"explain"</span> or{" "}
+          <span className="text-glacier-600">"justify"</span> tend to trigger
+          longer responses and use more energy. When a short answer will do, try{" "}
+          <span className="text-glacier-600">"summarize,"</span>{" "}
+          <span className="text-glacier-600">"list,"</span> or{" "}
+          <span className="text-glacier-600">"classify"</span> instead. (Source:
+          Lancaster University, 2025).
+        </>
+      ),
+      category: "PROMPTS",
+      isExpanded: false,
+    },
+    {
       id: "3",
       title: "Skip polite fillers",
       content: (
