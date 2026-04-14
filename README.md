@@ -165,6 +165,7 @@ We welcome contributions. Please follow these steps:
 
 - **Claude:** DOM parsing available - use robust selectors and feature flags; test extensively against different Claude UIs.
 - **ChatGPT:** free-tier detection possible via DOM; paid tiers restrict automatic detection - provide a manual model dropdown and clear UX to set model if detection fails.
+- **Claude:** detection possible via dom. In case of failure provide default fallback model
 - **Fallbacks:** assume global average PUE & carbon intensity if location/model cannot be resolved.
 
 ## Example Test Cases (to include under tests/fixtures)
