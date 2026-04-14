@@ -48,7 +48,8 @@ export const TipsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       title: "Choose your verb carefully",
       content: (
         <>
-          Words like <span className="text-glacier-600">"explain"</span> or{" "}
+          Words like{" "}
+          <span className="text-glacier-600">"explain"</span> or{" "}
           <span className="text-glacier-600">"justify"</span> tend to trigger
           longer responses and use more energy. When a short answer will do, try{" "}
           <span className="text-glacier-600">"summarize,"</span>{" "}
