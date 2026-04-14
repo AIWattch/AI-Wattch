@@ -32,7 +32,7 @@ Initially supported (V1.5 / V2.0 planned mapping):
 
 - **ChatGPT model family** (manual selection for ChatGPT Pro/Plus; automatic detection for free-tier where possible)
 - **Claude family** (automatic detection via DOM parsing)
-- **Planned:** Gemini, other LLMs (modular architecture supports adding new detectors)
+- **Gemini** (manual selection for Gemini Pro/Plus; automatic detection where possible)
 
 ## Browsers
 
