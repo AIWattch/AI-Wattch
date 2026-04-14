@@ -103,7 +103,9 @@ const setFirstTokenTime = (e: Node, platform: SupportedPlatform) => {
   if (
     platform === "chatgpt" &&
     e instanceof HTMLElement &&
-    e.getAttribute("data-message-author-role") === "assistant"
+    (e.getAttribute("data-message-author-role") === "assistant" ||
+      e.getAttribute("data-turn") === "assistant" ||
+      e.querySelector('[data-message-author-role="assistant"]') !== null)
   ) {
     // setting has started true here as well since we tracking retry and all
     if (!hasStarted) {
@@ -113,7 +115,8 @@ const setFirstTokenTime = (e: Node, platform: SupportedPlatform) => {
   } else if (
     platform === "claude" &&
     e instanceof HTMLElement &&
-    e.querySelector(".font-claude-response") !== null
+    (e.querySelector(".font-claude-response-body") !== null ||
+      e.querySelector(".standard-markdown") !== null)
   ) {
     // setting has started true here as well since we tracking retry and all
     // if (!hasStarted) {
@@ -224,17 +227,19 @@ const ProcessResponse = (platform: SupportedPlatform) => {
   };
   if (platform === "chatgpt") {
     console.log("DEBUG: Came here 5");
-    const allNodes = document.querySelectorAll<HTMLElement>(
-      "div section[data-turn='assistant'], div section[data-turn='user']",
-    );
-    console.log(allNodes, allNodes.length, "adojcnadvbojdbvo");
+    const allOutputNodes = document.querySelectorAll(
+      '[data-message-author-role="assistant"]',
+    ) as NodeListOf<HTMLElement>;
+    const allInputNodes = document.querySelectorAll(
+      '[data-message-author-role="user"]',
+    ) as NodeListOf<HTMLElement>;
 
-    if (allNodes.length !== 0) {
-      const outputNode = allNodes[allNodes.length - 1];
+    if (allOutputNodes.length !== 0 && allInputNodes.length !== 0) {
+      const outputNode = allOutputNodes[allOutputNodes.length - 1];
+      const inputNode = allInputNodes[allInputNodes.length - 1];
       console.log("DEBUG: Came here 6", { outputNode });
-      const outputText = outputNode.innerText.replace("ChatGPT said:", "");
-      const inputNode = allNodes[allNodes.length - 2];
-      const inputText = inputNode.innerText.replace("You said:", "");
+      const outputText = outputNode.innerText;
+      const inputText = inputNode.innerText;
 
       const outputTokens = estimateTokens(outputText || "");
       const inputTokens = estimateTokens(inputText || "");
@@ -252,7 +257,7 @@ const ProcessResponse = (platform: SupportedPlatform) => {
     }
   } else if (platform === "claude") {
     const allOutputNode = document.querySelectorAll(
-      ".font-claude-response",
+      ".standard-markdown",
     ) as NodeListOf<HTMLElement>;
     const allInputNode = document.querySelectorAll(
       "[data-testid='user-message']",
@@ -347,6 +352,23 @@ export const createMessageObserver = (
     if (!allowedToTrack) return;
 
     mutations.forEach((mutation) => {
+      // Claude: detect response completion when send button becomes re-enabled
+      if (
+        mutation.type === "attributes" &&
+        platform === "claude" &&
+        hasStarted &&
+        mutation.target instanceof HTMLElement &&
+        mutation.target.getAttribute("aria-label") === "Send message" &&
+        !mutation.target.hasAttribute("disabled")
+      ) {
+        hasStarted = false;
+        console.log("DEBUG: 👁️ AI Wattch: Claude response completed (send button re-enabled)");
+        setLastTokenTime();
+        const sendObject = ProcessResponse(platform);
+        onNewMessage(sendObject);
+        return;
+      }
+
       if (mutation.type === "childList") {
         if (
           platform === "claude" &&

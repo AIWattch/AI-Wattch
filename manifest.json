@@ -10,7 +10,9 @@
         "https://chat.openai.com/*",
         "https://chatgpt.com/*",
         "https://claude.ai/*",
-        "https://gemini.google.com/*"
+        "https://gemini.google.com/*",
+        "https://ipapi.co/*",
+        "https://api.ipbase.com/*"
     ],
     "background": {
         "service_worker": "src/background/index.ts",

@@ -63,8 +63,9 @@ const startMonitoring = (platform: string) => {
   messageObserver.observe(document.body, {
     childList: true,
     subtree: true,
+    attributes: true,
+    attributeFilter: ["disabled"],
     // characterData: true,
-    // attributes: true,
   });
 
   console.log("AI Wattch: Message observer started");
