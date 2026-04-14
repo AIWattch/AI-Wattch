@@ -2,6 +2,7 @@
  * API client for consumption calculations
  */
 
+import { WUE_ONSITE } from "../../constants";
 import {
   QueryMetric,
   QueryMetricResponse,
@@ -9,8 +10,6 @@ import {
 } from "../../shared/types";
 
 const API_BASE_URL = "https://otm-api.antarctica.io/v1/ai-wattch";
-// const API_BASE_URL = "https://otm-api-dev.antarctica.io/v1/ai-wattch";
-// const API_BASE_URL = "http://localhost:3000/v1/ai-wattch";
 
 let cooldownUntil = 0;
 let debounceTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -91,12 +90,23 @@ export const calculateConsumptionApi = async (
         const parsedResponse = await response.json();
         const data = parsedResponse.data[0];
 
+        const WUE =
+          config?.selectedModel?.platform === "chatgpt"
+            ? WUE_ONSITE.OPENAI
+            : config?.selectedModel?.platform === "claude"
+              ? WUE_ONSITE.ANTHROPIC
+              : config?.selectedModel?.platform === "gemini"
+                ? WUE_ONSITE.GOOGLE
+                : 1.2;
+
+        const waterConsumption = data.energyKWh * WUE;
+
         resolve({
           energyKWh: data.energyKWh,
           carbonEmissionsKgCO2e: data.carbonEmissionsKgCO2e,
-          waterConsumption: data.metrics.waterConsumption,
-          lightBulbMinutes: data.metrics.lightBulbMinutes,
-          smartphoneCharges: data.metrics.smartphoneCharges,
+          waterConsumption: waterConsumption * 1000, // convert to ml
+          lightBulbMinutes: data.energyKWh / 0.005,
+          smartphoneCharges: data.energyKWh / 0.04,
         });
       } catch (error) {
         console.error(

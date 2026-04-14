@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "AI Wattch - Track Your AI Footprint",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "description": "Discover how your AI usage impacts the planet. Measure, compare, and optimize your AI footprint in real time.",
     "permissions": [
         "storage"
@@ -10,7 +10,9 @@
         "https://chat.openai.com/*",
         "https://chatgpt.com/*",
         "https://claude.ai/*",
-        "https://gemini.google.com/*"
+        "https://gemini.google.com/*",
+        "https://ipapi.co/*",
+        "https://api.ipbase.com/*"
     ],
     "background": {
         "scripts": [

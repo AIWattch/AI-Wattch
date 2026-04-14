@@ -56,7 +56,7 @@ const startMonitoring = (platform: string) => {
 
   messageObserver = createMessageObserver(
     platform as any,
-    processDetectedMessage
+    processDetectedMessage,
   );
 
   // Start observing
@@ -66,6 +66,7 @@ const startMonitoring = (platform: string) => {
     attributes: true,
     attributeFilter: ["disabled"],
     // characterData: true,
+    // attributes: true,
   });
 
   console.log("AI Wattch: Message observer started");

@@ -1,6 +1,5 @@
 import React, { useRef, useState } from "react";
 
-
 import { ChevronDownIcon } from "../../icons/ChevronDownIcon";
 import { ArrowLeftIcon } from "../../icons/ArrowLeftIcon";
 import TipsIcon from "../../icons/TipsIcon";
@@ -99,8 +98,8 @@ export const TipsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const toggleTip = (id: string) => {
     setTips(
       tips.map((tip) =>
-        tip.id === id ? { ...tip, isExpanded: !tip.isExpanded } : tip
-      )
+        tip.id === id ? { ...tip, isExpanded: !tip.isExpanded } : tip,
+      ),
     );
   };
 
@@ -115,16 +114,16 @@ export const TipsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         tips.map((tip, index) =>
           index === 0
             ? { ...tip, isExpanded: true }
-            : { ...tip, isExpanded: false }
-        )
+            : { ...tip, isExpanded: false },
+        ),
       );
     } else {
       setTips(
         tips.map((tip) =>
           tip.category === filter
             ? { ...tip, isExpanded: true }
-            : { ...tip, isExpanded: false }
-        )
+            : { ...tip, isExpanded: false },
+        ),
       );
     }
 

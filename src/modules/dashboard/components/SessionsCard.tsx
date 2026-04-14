@@ -206,9 +206,7 @@ export const SessionsCard: React.FC<{
                   </span>
                 </span>
               </div>
-            ) : (
-              0
-            )}
+            ) : null}
 
             {+consumptionDataRadial.claude.value > 0 ? (
               <div key={"claude"} className="flex items-center justify-between">

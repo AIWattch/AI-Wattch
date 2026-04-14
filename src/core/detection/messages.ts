@@ -130,9 +130,9 @@ const setFirstTokenTime = (e: Node, platform: SupportedPlatform) => {
       e.querySelector("model-response") !== null ||
       e.className.includes("model-response"))
   ) {
-    if (!hasStarted) {
-      setStartTime();
-    }
+    // if (!hasStarted) {
+    //   setStartTime();
+    // }
     firstTokenTime = Date.now() / 1000;
   }
 };
@@ -362,7 +362,9 @@ export const createMessageObserver = (
         !mutation.target.hasAttribute("disabled")
       ) {
         hasStarted = false;
-        console.log("DEBUG: 👁️ AI Wattch: Claude response completed (send button re-enabled)");
+        console.log(
+          "DEBUG: 👁️ AI Wattch: Claude response completed (send button re-enabled)",
+        );
         setLastTokenTime();
         const sendObject = ProcessResponse(platform);
         onNewMessage(sendObject);

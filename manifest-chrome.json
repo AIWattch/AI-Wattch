@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "AI Wattch - Track Your AI Footprint",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "description": "Discover how your AI usage impacts the planet. Measure, compare, and optimize your AI footprint in real time.",
     "permissions": [
         "storage"
