@@ -21,7 +21,7 @@ Discover how your AI usage impacts the planet. Measure, compare, and optimize yo
 ## How it works (high level)
 
 1. The extension parses the page DOM for supported chat UIs (ChatGPT, Claude and Gemini).
-2. It captures lightweight telemetry (timestamps, token counts, model selection) - never full chat text.
+2. It captures lightweight telemetry (timestamps, token counts, model selection) - never full chat text. Here is the full [API documentation](https://docs.antarctica.io/modules/ai/apis/telemetry-usage).
 3. Two estimation approaches run (token-based & time-based). Both can be combined into a hybrid estimate.
 4. Regional factors (PUE, grid carbon intensity) and model-specific hardware stats (TDP, quantization) convert energy → emissions.
 5. The UI surfaces real-time metrics, session summaries, model comparisons, and prompt-efficiency tips.
