@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { browser } from "../../lib/browserApi";
 
 // Optional generic, returns undefined initially if not set
 export function useStorageObserver<T = any>(key: string): T | undefined {
@@ -6,18 +7,15 @@ export function useStorageObserver<T = any>(key: string): T | undefined {
 
   useEffect(() => {
     // Load initial value
-    chrome.storage.local.get([key], (result) => {
-      if (chrome.runtime.lastError) {
-        console.error("Storage read error:", chrome.runtime.lastError);
-        return;
-      }
-
+    browser.storage.local.get([key]).then((result) => {
       setValue(result[key]);
+    }).catch((err) => {
+      console.error("Storage read error:", err);
     });
 
     // Listen for storage changes
     const handleChange = (
-      changes: { [key: string]: chrome.storage.StorageChange },
+      changes: { [key: string]: browser.storage.StorageChange },
       areaName: string
     ) => {
       if (areaName === "local" && changes[key]) {
@@ -25,10 +23,10 @@ export function useStorageObserver<T = any>(key: string): T | undefined {
       }
     };
 
-    chrome.storage.onChanged.addListener(handleChange);
+    browser.storage.onChanged.addListener(handleChange);
 
     return () => {
-      chrome.storage.onChanged.removeListener(handleChange);
+      browser.storage.onChanged.removeListener(handleChange);
     };
   }, [key]);
 

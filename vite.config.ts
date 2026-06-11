@@ -19,4 +19,7 @@ export default defineConfig({
       origin: [/chrome-extension:\/\//],
     },
   },
+  test: {
+    environment: "jsdom",
+  },
 });
