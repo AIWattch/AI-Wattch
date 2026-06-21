@@ -103,16 +103,17 @@ const detectClaudeModel = (): ModelInfo | null => {
     );
 
     if (target) {
-      const text = target.textContent?.trim();
+      const raw = target.textContent?.trim() ?? "";
+      // claude.ai may render "Claude Sonnet 4.6" or just "Sonnet 4.6"
+      const text = raw.replace(/^Claude\s+/i, "");
       const model = LLM_MODELS.find(
         (model) => model.detectionName === text && model.platform === "claude",
       );
       if (text && model) {
         modelInfo = model;
-        // updateSelectedModel(model);
       }
 
-      console.log("Found text:", text);
+      console.log("Found text:", raw, "→ normalised:", text);
     } else {
       console.log("Target div not found inside container.");
     }
