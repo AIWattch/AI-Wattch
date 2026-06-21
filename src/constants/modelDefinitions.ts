@@ -132,7 +132,15 @@ export const LLM_MODELS: ModelInfo[] = [
     modelName: "Claude Sonnet 4.6",
     detectionName: "Sonnet 4.6",
     platform: "claude",
-    modelId: "claude-sonnet-4-6",
+    // Proxy to Sonnet 4.5 API factor until OTM backend adds claude-sonnet-4-6
+    modelId: "claude-sonnet-4-5",
+  },
+  {
+    modelName: "Claude Opus 4.8",
+    detectionName: "Opus 4.8",
+    platform: "claude",
+    // Proxy to Opus 4.7 API factor until OTM backend adds claude-opus-4-8
+    modelId: "claude-opus-4-7",
   },
   {
     modelName: "Claude Opus 4.6",
@@ -268,9 +276,11 @@ export const LLM_MODELS: ModelInfo[] = [
 ];
 
 export const getDefaultModel = (platform?: "chatgpt" | "claude" | "gemini") => {
-  if (platform === "chatgpt") return LLM_MODELS[1];
-  if (platform === "gemini") return LLM_MODELS[10];
-  return LLM_MODELS[22];
+  if (platform === "chatgpt")
+    return LLM_MODELS.find((m) => m.modelId === "gpt-5.3-chat-latest")!;
+  if (platform === "gemini")
+    return LLM_MODELS.find((m) => m.modelId === "gemini-3-flash-preview")!;
+  return LLM_MODELS.find((m) => m.modelId === "claude-sonnet-4-5")!;
 };
 
 export const getAllModelsByPlatform = (
@@ -280,9 +290,10 @@ export const getAllModelsByPlatform = (
 };
 
 export const DEFAULT_DETECTION_MODEL = {
-  chatgpt: LLM_MODELS[1],
-  claude: LLM_MODELS[22],
-  gemini: LLM_MODELS[10],
+  chatgpt: LLM_MODELS.find((m) => m.modelId === "gpt-5.3-chat-latest")!,
+  // Default to Sonnet 4.5 — the most common free-tier Claude model
+  claude: LLM_MODELS.find((m) => m.modelId === "claude-sonnet-4-5")!,
+  gemini: LLM_MODELS.find((m) => m.modelId === "gemini-3-flash-preview")!,
 };
 
 export const DEFAULT_TOKEN_ESTIMATION = {
