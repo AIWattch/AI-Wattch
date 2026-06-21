@@ -7,6 +7,13 @@ export interface DailyRecord {
   water_ml: number;
   sessions: number;
   prompts: number;
+  byModel?: Record<string, {
+    energy_Wh: number;
+    co2_g: number;
+    water_ml: number;
+    sessions: number;
+    prompts: number;
+  }>;
 }
 
 const KEY_PREFIX = "day_";
