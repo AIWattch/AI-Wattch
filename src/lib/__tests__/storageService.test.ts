@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  clearAllTimeTotal,
+  getAllTimeTotal,
   getDailyRecord,
   getDailyRecords,
+  incrementAllTimeTotal,
   pruneOldRecords,
   upsertDailyRecord,
   type DailyRecord,
@@ -128,5 +131,79 @@ describe("pruneOldRecords", () => {
 
     expect(store[`day_${day366}`]).toBeUndefined();
     expect(store[`day_${day364}`]).toBeDefined();
+  });
+});
+
+describe("getAllTimeTotal", () => {
+  it("returns zeroed RollupTotal with empty byModel when no key exists", async () => {
+    const total = await getAllTimeTotal();
+
+    expect(total.energy_Wh).toBe(0);
+    expect(total.co2_g).toBe(0);
+    expect(total.water_ml).toBe(0);
+    expect(total.sessions).toBe(0);
+    expect(total.prompts).toBe(0);
+    expect(total.byModel).toEqual({});
+  });
+});
+
+describe("incrementAllTimeTotal", () => {
+  it("accumulates grand totals and byModel for a single product", async () => {
+    await incrementAllTimeTotal("Claude", { energy_Wh: 10, co2_g: 2, water_ml: 50, sessions: 1, prompts: 3 });
+    await incrementAllTimeTotal("Claude", { energy_Wh: 5, co2_g: 1, water_ml: 25, sessions: 1, prompts: 2 });
+
+    const total = await getAllTimeTotal();
+
+    expect(total.energy_Wh).toBe(15);
+    expect(total.co2_g).toBe(3);
+    expect(total.water_ml).toBe(75);
+    expect(total.sessions).toBe(2);
+    expect(total.prompts).toBe(5);
+    expect(total.byModel.Claude.energy_Wh).toBe(15);
+    expect(total.byModel.Claude.prompts).toBe(5);
+  });
+
+  it("tracks distinct products in byModel independently", async () => {
+    await incrementAllTimeTotal("Claude", { energy_Wh: 10, co2_g: 2, water_ml: 50, sessions: 1, prompts: 3 });
+    await incrementAllTimeTotal("ChatGPT", { energy_Wh: 8, co2_g: 1, water_ml: 30, sessions: 1, prompts: 2 });
+
+    const total = await getAllTimeTotal();
+
+    expect(Object.keys(total.byModel)).toHaveLength(2);
+    expect(total.byModel.Claude.energy_Wh).toBe(10);
+    expect(total.byModel.ChatGPT.energy_Wh).toBe(8);
+    expect(total.energy_Wh).toBe(18);
+  });
+
+  it("grand total energy_Wh equals sum of byModel entries", async () => {
+    await incrementAllTimeTotal("Claude", { energy_Wh: 12, co2_g: 0, water_ml: 0, sessions: 0, prompts: 0 });
+    await incrementAllTimeTotal("Gemini", { energy_Wh: 8, co2_g: 0, water_ml: 0, sessions: 0, prompts: 0 });
+
+    const total = await getAllTimeTotal();
+    const byModelSum = Object.values(total.byModel).reduce((s, m) => s + m.energy_Wh, 0);
+
+    expect(total.energy_Wh).toBe(20);
+    expect(byModelSum).toBe(20);
+  });
+});
+
+describe("clearAllTimeTotal", () => {
+  it("removes the all-time total key", async () => {
+    await incrementAllTimeTotal("Claude", { energy_Wh: 10, co2_g: 2, water_ml: 50, sessions: 1, prompts: 3 });
+    await clearAllTimeTotal();
+
+    const total = await getAllTimeTotal();
+
+    expect(total.energy_Wh).toBe(0);
+    expect(total.byModel).toEqual({});
+  });
+
+  it("pruneOldRecords does not touch the alltime_total key", async () => {
+    await incrementAllTimeTotal("Claude", { energy_Wh: 5, co2_g: 1, water_ml: 20, sessions: 1, prompts: 2 });
+    await pruneOldRecords();
+
+    const total = await getAllTimeTotal();
+
+    expect(total.energy_Wh).toBe(5);
   });
 });
