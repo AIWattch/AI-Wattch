@@ -30,6 +30,7 @@ export interface RollupTotal extends ModelTotal {
 
 const KEY_PREFIX = "day_";
 const ALLTIME_KEY = "alltime_total";
+const QUOTA_THRESHOLD_BYTES = 4 * 1024 * 1024; // 4 MB — stays under old 5 MB Chrome ceiling
 
 function dateToKey(date: string): string {
   return `${KEY_PREFIX}${date}`;
@@ -53,8 +54,28 @@ export async function getDailyRecord(date: string): Promise<DailyRecord | null> 
 }
 
 export async function upsertDailyRecord(
-  sessionData: Partial<DailyRecord>
+  product: string,
+  sessionData: Partial<ModelTotal>
 ): Promise<void> {
+  // Quota guard: prune first if near limit; skip write if still over after prune.
+  // Never blocks the all-time increment (caller's responsibility).
+  try {
+    const getBytesInUse = (browser.storage.local as unknown as { getBytesInUse?: () => Promise<number> }).getBytesInUse;
+    if (getBytesInUse) {
+      const bytesInUse = await getBytesInUse();
+      if (bytesInUse > QUOTA_THRESHOLD_BYTES) {
+        await pruneOldRecords();
+        const bytesAfterPrune = await getBytesInUse();
+        if (bytesAfterPrune > QUOTA_THRESHOLD_BYTES) {
+          console.warn("AI Wattch: Storage quota exceeded after prune, skipping daily write");
+          return;
+        }
+      }
+    }
+  } catch {
+    // getBytesInUse unavailable in some environments — proceed with write
+  }
+
   const today = new Date().toLocaleDateString("en-CA");
   const key = dateToKey(today);
 
@@ -69,6 +90,15 @@ export async function upsertDailyRecord(
       prompts: 0,
     };
 
+    const existingByModel = existing.byModel ?? {};
+    const existingProduct = existingByModel[product] ?? {
+      energy_Wh: 0,
+      co2_g: 0,
+      water_ml: 0,
+      sessions: 0,
+      prompts: 0,
+    };
+
     const updated: DailyRecord = {
       date: today,
       energy_Wh: existing.energy_Wh + (sessionData.energy_Wh ?? 0),
@@ -76,6 +106,16 @@ export async function upsertDailyRecord(
       water_ml: existing.water_ml + (sessionData.water_ml ?? 0),
       sessions: existing.sessions + (sessionData.sessions ?? 0),
       prompts: existing.prompts + (sessionData.prompts ?? 0),
+      byModel: {
+        ...existingByModel,
+        [product]: {
+          energy_Wh: existingProduct.energy_Wh + (sessionData.energy_Wh ?? 0),
+          co2_g: existingProduct.co2_g + (sessionData.co2_g ?? 0),
+          water_ml: existingProduct.water_ml + (sessionData.water_ml ?? 0),
+          sessions: existingProduct.sessions + (sessionData.sessions ?? 0),
+          prompts: existingProduct.prompts + (sessionData.prompts ?? 0),
+        },
+      },
     };
 
     await browser.storage.local.set({ [key]: updated });
