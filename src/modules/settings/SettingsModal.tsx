@@ -16,12 +16,14 @@ import { useStorageObserver } from "../../shared/hooks/useStorageObserver";
 import {
   detectPlatform,
   resetSettings,
+  resetSessionData,
   SETTINGS_KEY,
   updateSetting,
 } from "../../core";
 import { detectModel } from "../../core/detection/model";
 import FlagIcon from "../../icons/FlagIcon";
 import { GeminiLogo } from "../../icons/GeminiLogo";
+import { clearAllDailyRecords, clearAllTimeTotal } from "../../lib/storageService";
 
 // Custom Select Component
 
@@ -33,6 +35,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
   const { locations, quickLocations } = useMemo(() => getLocations(), []);
 
   const [settingChanged, setSettingChanged] = useState(false);
+  const [showClearHistoryConfirm, setShowClearHistoryConfirm] = useState(false);
 
   const settings = useStorageObserver<UserSettings>(SETTINGS_KEY);
 
@@ -331,8 +334,53 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
             View Methodology
             <ExternalLinkIcon />
           </button>
+
+          <button
+            onClick={() => setShowClearHistoryConfirm(true)}
+            className="flex w-full items-center justify-center gap-1.5 h-8 bg-red-50 border border-red-200 rounded-full text-sm text-red-600 hover:bg-red-100 transition-colors"
+          >
+            Clear history
+          </button>
         </div>
       </div>
+
+      {showClearHistoryConfirm && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
+          style={{ zIndex: 2147483650 }}
+          onClick={() => setShowClearHistoryConfirm(false)}
+        >
+          <div
+            className="bg-white rounded-2xl border border-red-200 w-[300px] p-4 space-y-3"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-sm font-medium text-obsidian">Clear all history?</h3>
+            <p className="text-xs text-grey-600">
+              This will erase all stored usage data. This can't be undone.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowClearHistoryConfirm(false)}
+                className="flex-1 h-8 border border-grey-200 rounded-full text-sm text-grey-600 hover:bg-grey-100"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  await clearAllDailyRecords();
+                  await clearAllTimeTotal();
+                  await resetSessionData();
+                  setShowClearHistoryConfirm(false);
+                  onClose();
+                }}
+                className="flex-1 h-8 bg-red-500 border border-red-600 rounded-full text-sm text-white hover:bg-red-600"
+              >
+                Clear history
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

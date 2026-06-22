@@ -176,6 +176,15 @@ export const resetSessionData = async (): Promise<SessionData> => {
   return defaultSessionData;
 };
 
+// Resets only currentSession (the per-prompt display) — leaves dayBuckets intact.
+export const resetCurrentSession = async (): Promise<void> => {
+  const sessionData = await loadSessionData();
+  sessionData.currentSession = undefined;
+  sessionData.lastUpdated = Date.now();
+  await saveSessionData(sessionData);
+  console.log("AI Wattch: Current session reset");
+};
+
 // Clear old session data (older than specified days) - OPTIMIZED
 export const clearOldSessionData = async (
   daysToKeep: number = 3
