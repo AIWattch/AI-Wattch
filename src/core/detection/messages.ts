@@ -352,23 +352,38 @@ export const createMessageObserver = (
     if (!allowedToTrack) return;
 
     mutations.forEach((mutation) => {
-      // Claude: detect response completion when send button becomes re-enabled
+      // Detect response completion when send button becomes re-enabled (attribute mutation)
       if (
         mutation.type === "attributes" &&
-        platform === "claude" &&
         hasStarted &&
         mutation.target instanceof HTMLElement &&
-        mutation.target.getAttribute("aria-label") === "Send message" &&
         !mutation.target.hasAttribute("disabled")
       ) {
-        hasStarted = false;
-        console.log(
-          "DEBUG: 👁️ AI Wattch: Claude response completed (send button re-enabled)",
-        );
-        setLastTokenTime();
-        const sendObject = ProcessResponse(platform);
-        onNewMessage(sendObject);
-        return;
+        const el = mutation.target;
+        const isChatGPTSend =
+          platform === "chatgpt" &&
+          el.tagName === "BUTTON" &&
+          (el.getAttribute("data-testid") === "send-button" ||
+            el.getAttribute("aria-label") === "Send prompt" ||
+            el.getAttribute("aria-label") === "Send message");
+
+        const isClaudeSend =
+          platform === "claude" &&
+          el.getAttribute("aria-label") === "Send message";
+
+        if (isChatGPTSend || isClaudeSend) {
+          hasStarted = false;
+          console.log(
+            `DEBUG: 👁️ AI Wattch: ${platform} response completed (send button re-enabled)`,
+          );
+          setLastTokenTime();
+          // Defer innerText reads outside the mutation callback to avoid forced reflow
+          setTimeout(() => {
+            const sendObject = ProcessResponse(platform);
+            onNewMessage(sendObject);
+          }, 0);
+          return;
+        }
       }
 
       if (mutation.type === "childList") {
@@ -402,15 +417,12 @@ export const createMessageObserver = (
               hasStarted = false;
               console.log("DEBUG: 👁️ AI Wattch: Response completed detected");
 
-              // if (
-              //   node.children[0] &&
-              //   node.children[0].getAttribute("data-state") === "closed"
-              // ) {
               setLastTokenTime();
-
-              const sendObject = ProcessResponse(platform);
-
-              onNewMessage(sendObject);
+              // Defer innerText reads outside the mutation callback to avoid forced reflow
+              setTimeout(() => {
+                const sendObject = ProcessResponse(platform);
+                onNewMessage(sendObject);
+              }, 0);
             }
             // }
           });

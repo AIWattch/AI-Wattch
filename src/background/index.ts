@@ -173,11 +173,15 @@ const notifyPopup = async (
 
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   if (changeInfo.status === "complete" && tab.url) {
-    await sendToContentScript({
-      tabId: tabId,
-      type: MESSAGE_TYPES.PLATFORM_CHANGED,
-      data: { url: tab.url },
-    });
+    try {
+      await sendToContentScript({
+        tabId: tabId,
+        type: MESSAGE_TYPES.PLATFORM_CHANGED,
+        data: { url: tab.url },
+      });
+    } catch {
+      // Content script not yet injected — normal on fresh tab load
+    }
   }
 });
 
