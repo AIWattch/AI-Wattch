@@ -11,6 +11,16 @@ Discover how your AI usage impacts the planet. Measure, compare, and optimize yo
 
 [AI Wattch](https://antarctica.io/ai-wattch) is an open-source browser extension powered by[Antarctica’s One Token Model (OTM)](https://antarctica.io/research/one-token-model) that estimates the energy use and carbon footprint of end-user interactions with LLM-powered chat interfaces such as ChatGPT, Claude and Gemini. It combines token-based and time-based estimation, regional infrastructure mapping, and model-specific parameters to deliver transparent, science-backed emissions reporting per session.
 
+## What's New
+
+### Persistent Usage History (v1.2)
+
+- **Period selector** — the Sessions card now has a dropdown to switch between Today, This week (rolling 7 days), This month (rolling 30 days), and All time views. Data persists across browser restarts.
+- **Usage history** — daily energy, CO₂ and water records are stored locally (365-day rolling window) so you can track trends over time.
+- **All-time totals** — a running cumulative total is maintained separately and never pruned.
+- **Per-model breakdown** — history is tracked per product (Claude / ChatGPT / Gemini) so the period views show per-model splits.
+- **Session vs. history reset** — the refresh button now clears only the current live session; a new "Clear history" button in Settings wipes the stored history after confirmation.
+
 ## Why AI Wattch
 
 - **Transparency:** Makes invisible energy costs visible - per session, per token, per model.
@@ -125,6 +135,10 @@ npm test
 - Timestamp-based computation logic
 - Basic model-detection flows (mock DOM)
 - Regional lookup fallbacks
+- Daily record upsert & per-model accumulation
+- All-time total increment and isolation from daily records
+- Quota guard (storage near-full skips daily write)
+- 365-day pruning boundary (day 364 kept, day 366 removed)
 
 ### Integration & Scenario Tests (recommended):
 
