@@ -12,6 +12,8 @@ import {
 
 // In-memory store backing the mock
 let store: Record<string, unknown> = {};
+// Controlled return value for getBytesInUse — 0 means "not over quota"
+let mockBytesInUse = 0;
 
 vi.mock("../../lib/browserApi", () => ({
   browser: {
@@ -29,6 +31,7 @@ vi.mock("../../lib/browserApi", () => ({
         remove: vi.fn(async (keys: string[]) => {
           keys.forEach((k) => delete store[k]);
         }),
+        getBytesInUse: vi.fn(async () => mockBytesInUse),
       },
     },
   },
@@ -51,6 +54,7 @@ vi.mock("../browserApi", () => ({
         remove: vi.fn(async (keys: string[]) => {
           keys.forEach((k) => delete store[k]);
         }),
+        getBytesInUse: vi.fn(async () => mockBytesInUse),
       },
     },
   },
@@ -58,14 +62,15 @@ vi.mock("../browserApi", () => ({
 
 beforeEach(() => {
   store = {};
+  mockBytesInUse = 0;
   vi.clearAllMocks();
 });
 
 describe("upsertDailyRecord", () => {
   it("accumulates values across multiple calls on the same day", async () => {
-    await upsertDailyRecord({ energy_Wh: 10, co2_g: 5, water_ml: 100, sessions: 1, prompts: 3 });
-    await upsertDailyRecord({ energy_Wh: 20, co2_g: 8, water_ml: 200, sessions: 1, prompts: 5 });
-    await upsertDailyRecord({ energy_Wh: 5,  co2_g: 2, water_ml: 50,  sessions: 0, prompts: 1 });
+    await upsertDailyRecord("Claude", { energy_Wh: 10, co2_g: 5, water_ml: 100, sessions: 1, prompts: 3 });
+    await upsertDailyRecord("Claude", { energy_Wh: 20, co2_g: 8, water_ml: 200, sessions: 1, prompts: 5 });
+    await upsertDailyRecord("Claude", { energy_Wh: 5,  co2_g: 2, water_ml: 50,  sessions: 0, prompts: 1 });
 
     const today = new Date().toLocaleDateString("en-CA");
     const record = await getDailyRecord(today);
@@ -79,13 +84,39 @@ describe("upsertDailyRecord", () => {
   });
 
   it("creates a fresh record when none exists", async () => {
-    await upsertDailyRecord({ energy_Wh: 7, prompts: 1 });
+    await upsertDailyRecord("Claude", { energy_Wh: 7, prompts: 1 });
     const today = new Date().toLocaleDateString("en-CA");
     const record = await getDailyRecord(today);
 
     expect(record!.energy_Wh).toBe(7);
     expect(record!.co2_g).toBe(0);
     expect(record!.prompts).toBe(1);
+  });
+
+  it("accumulates byModel breakdown per product and keeps products separate", async () => {
+    await upsertDailyRecord("Claude", { energy_Wh: 10, co2_g: 2, water_ml: 50, sessions: 1, prompts: 3 });
+    await upsertDailyRecord("ChatGPT", { energy_Wh: 8, co2_g: 1, water_ml: 30, sessions: 1, prompts: 2 });
+    await upsertDailyRecord("Claude", { energy_Wh: 5, co2_g: 1, water_ml: 25, sessions: 0, prompts: 1 });
+
+    const today = new Date().toLocaleDateString("en-CA");
+    const record = await getDailyRecord(today);
+
+    expect(record!.energy_Wh).toBe(23);
+    expect(record!.byModel!.Claude.energy_Wh).toBe(15);
+    expect(record!.byModel!.Claude.prompts).toBe(4);
+    expect(record!.byModel!.ChatGPT.energy_Wh).toBe(8);
+    expect(record!.byModel!.ChatGPT.prompts).toBe(2);
+  });
+
+  it("skips the daily write when storage remains over quota after pruning", async () => {
+    mockBytesInUse = 5 * 1024 * 1024; // 5 MB > 4 MB threshold
+
+    await upsertDailyRecord("Claude", { energy_Wh: 10, co2_g: 2, water_ml: 50, sessions: 1, prompts: 1 });
+
+    const today = new Date().toLocaleDateString("en-CA");
+    const record = await getDailyRecord(today);
+
+    expect(record).toBeNull();
   });
 });
 

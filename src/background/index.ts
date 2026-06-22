@@ -17,6 +17,12 @@ import {
 import { MESSAGE_TYPES } from "../constants";
 import { fetchUserLocationInternal } from "../shared/utils/locationService";
 import { defaultConsumptionByPlatform } from "../shared/utils/defaults";
+import {
+  upsertDailyRecord,
+  incrementAllTimeTotal,
+  pruneOldRecords,
+} from "../lib/storageService";
+import { toProduct } from "../lib/product";
 
 console.log("Service worker started");
 
@@ -44,6 +50,17 @@ const processAIMetrics = async (
       const consumption = await calculateConsumptionApi(metrics, settings);
       if (consumption) {
         await addMetricsToSession({ ...metrics, ...consumption });
+
+        const product = toProduct(metrics.modelId ?? "");
+        const dailyData = {
+          energy_Wh: (consumption.energyKWh ?? 0) * 1000,
+          co2_g: (consumption.carbonEmissionsKgCO2e ?? 0) * 1000,
+          water_ml: consumption.waterConsumption ?? 0,
+          sessions: 1,
+          prompts: 1,
+        };
+        await upsertDailyRecord(product, dailyData);
+        await incrementAllTimeTotal(product, dailyData);
       }
     } else {
       const sessionData = await getTodaySessionData();
@@ -397,6 +414,11 @@ const reloadAllowedTabs = async (): Promise<void> => {
     console.error("AI Watch: Error during tab reload:", error);
   }
 };
+
+// Prune old daily records on each browser startup
+chrome.runtime.onStartup.addListener(() => {
+  pruneOldRecords();
+});
 
 // Handle extension installation and updates
 chrome.runtime.onInstalled.addListener((details) => {
