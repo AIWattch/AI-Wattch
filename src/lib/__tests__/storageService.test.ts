@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  clearAllDailyRecords,
   clearAllTimeTotal,
   getAllTimeTotal,
   getDailyRecord,
@@ -236,5 +237,18 @@ describe("clearAllTimeTotal", () => {
     const total = await getAllTimeTotal();
 
     expect(total.energy_Wh).toBe(5);
+  });
+});
+
+describe("clearAllDailyRecords", () => {
+  it("removes all day_* keys but leaves alltime_total intact", async () => {
+    const today = new Date().toLocaleDateString("en-CA");
+    store[`day_${today}`] = { date: today, energy_Wh: 5, co2_g: 1, water_ml: 20, sessions: 1, prompts: 2 } satisfies DailyRecord;
+    store["alltime_total"] = { energy_Wh: 5, co2_g: 1, water_ml: 20, sessions: 1, prompts: 2, byModel: {} };
+
+    await clearAllDailyRecords();
+
+    expect(store[`day_${today}`]).toBeUndefined();
+    expect(store["alltime_total"]).toBeDefined();
   });
 });

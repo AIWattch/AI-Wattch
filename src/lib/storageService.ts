@@ -206,6 +206,19 @@ export async function clearAllTimeTotal(): Promise<void> {
   }
 }
 
+export async function clearAllDailyRecords(): Promise<void> {
+  try {
+    const all = await browser.storage.local.get(null);
+    const toDelete = Object.keys(all).filter((key) => key.startsWith(KEY_PREFIX));
+    if (toDelete.length > 0) {
+      await browser.storage.local.remove(toDelete);
+    }
+  } catch (error) {
+    console.error("AI Wattch: Failed to clear daily records:", error);
+    throw error;
+  }
+}
+
 // Deletes any day_* key whose date is older than 365 days.
 export async function pruneOldRecords(): Promise<void> {
   const cutoff = new Date();
