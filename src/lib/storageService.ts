@@ -40,8 +40,8 @@ function keyToDate(key: string): string {
   return key.slice(KEY_PREFIX.length);
 }
 
-export function getTodayKey(): string {
-  return dateToKey(new Date().toLocaleDateString("en-CA"));
+export function getTodayKey(date: Date = new Date()): string {
+  return dateToKey(date.toLocaleDateString("en-CA"));
 }
 
 export async function getDailyRecord(date: string): Promise<DailyRecord | null> {
@@ -55,7 +55,8 @@ export async function getDailyRecord(date: string): Promise<DailyRecord | null> 
 
 export async function upsertDailyRecord(
   product: string,
-  sessionData: Partial<ModelTotal>
+  sessionData: Partial<ModelTotal>,
+  now: Date = new Date()
 ): Promise<void> {
   // Quota guard: prune first if near limit; skip write if still over after prune.
   // Never blocks the all-time increment (caller's responsibility).
@@ -64,7 +65,7 @@ export async function upsertDailyRecord(
     if (getBytesInUse) {
       const bytesInUse = await getBytesInUse();
       if (bytesInUse > QUOTA_THRESHOLD_BYTES) {
-        await pruneOldRecords();
+        await pruneOldRecords(now);
         const bytesAfterPrune = await getBytesInUse();
         if (bytesAfterPrune > QUOTA_THRESHOLD_BYTES) {
           console.warn("AI Wattch: Storage quota exceeded after prune, skipping daily write");
@@ -76,7 +77,7 @@ export async function upsertDailyRecord(
     // getBytesInUse unavailable in some environments — proceed with write
   }
 
-  const today = new Date().toLocaleDateString("en-CA");
+  const today = now.toLocaleDateString("en-CA");
   const key = dateToKey(today);
 
   try {
@@ -126,12 +127,12 @@ export async function upsertDailyRecord(
 }
 
 // Returns the last `days` days sorted oldest→newest, missing days omitted.
-export async function getDailyRecords(days: number): Promise<DailyRecord[]> {
+export async function getDailyRecords(days: number, now: Date = new Date()): Promise<DailyRecord[]> {
   const dates: string[] = [];
   const keys: string[] = [];
 
   for (let i = days - 1; i >= 0; i--) {
-    const d = new Date();
+    const d = new Date(now);
     d.setDate(d.getDate() - i);
     const dateStr = d.toLocaleDateString("en-CA");
     dates.push(dateStr);
@@ -207,8 +208,8 @@ export async function clearAllTimeTotal(): Promise<void> {
 }
 
 // Deletes any day_* key whose date is older than 365 days.
-export async function pruneOldRecords(): Promise<void> {
-  const cutoff = new Date();
+export async function pruneOldRecords(now: Date = new Date()): Promise<void> {
+  const cutoff = new Date(now);
   cutoff.setDate(cutoff.getDate() - 365);
   const cutoffStr = cutoff.toLocaleDateString("en-CA");
 
