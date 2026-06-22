@@ -147,9 +147,7 @@ export const SessionsCard: React.FC<{
 
   const consumptionDataRadial = getRadialData();
   return (
-    <div
-      className="bg-mist rounded-2xl mt-2"
-    >
+    <div className="bg-mist rounded-2xl mt-2">
       {/* Header */}
       {+consumptionDataRadial.total.value > 0 ? (
         <div
@@ -272,20 +270,19 @@ export const SessionsCard: React.FC<{
                 ]}
               />
               <div
-                className="absolute "
+                className="absolute"
                 style={{
                   top: "18px",
                   width: "97px",
                   height: "48.5px",
                   maxHeight: "48.5px",
                   overflow: "hidden",
-
                   left: "50%",
                   transform: "translate(-50%, 0%)",
                 }}
               >
                 <div
-                  className=" flex  justify-center"
+                  className="flex justify-center"
                   style={{
                     background:
                       "radial-gradient(117.69% 50% at 50% 0%, #FFFFFF 45.31%, #F0F5FB 100%)",
@@ -320,12 +317,8 @@ export const SessionsCard: React.FC<{
                 className="flex items-center justify-between"
               >
                 <div className="flex items-center gap-2">
-                  <div
-                    className={`w-[5px] h-[5px] rounded-full bg-black`}
-                  ></div>
-
+                  <div className="w-[5px] h-[5px] rounded-full bg-black"></div>
                   <GPTLogo size={13} fill="#000" />
-
                   <span className="text-xs text-grey-600">ChatGPT</span>
                 </div>
                 <span className="text-sm font-semibold text-obsidian">
@@ -340,12 +333,8 @@ export const SessionsCard: React.FC<{
             {+consumptionDataRadial.claude.value > 0 ? (
               <div key={"claude"} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div
-                    className={`w-[5px] h-[5px]  rounded-full ${"bg-pumpkin-flipper"}`}
-                  ></div>
-
+                  <div className="w-[5px] h-[5px] rounded-full bg-pumpkin-flipper"></div>
                   <ClaudeLogo size={13} />
-
                   <span className="text-xs text-grey-600">Claude</span>
                 </div>
                 <span className="text-sm font-semibold text-obsidian">
@@ -360,12 +349,8 @@ export const SessionsCard: React.FC<{
             {+consumptionDataRadial.gemini.value > 0 ? (
               <div key={"gemini"} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div
-                    className={`w-[5px] h-[5px]  rounded-full bg-[#4187F3]`}
-                  ></div>
-
+                  <div className="w-[5px] h-[5px] rounded-full bg-[#4187F3]"></div>
                   <GeminiLogo size={13} />
-
                   <span className="text-xs text-grey-600">Gemini</span>
                 </div>
                 <span className="text-sm font-semibold text-obsidian">
@@ -382,7 +367,7 @@ export const SessionsCard: React.FC<{
 
           <button
             onClick={handleShowTips}
-            className="bg-glacier-400 hover:bg-glacier-500 mt-3 border border-midnight-ocean-400 hover:border-midnight-ocean-500 flex items-center justify-between rounded-lg   px-1.5 py-2 h-8 text-sm  text-midnight-ocean-500 w-full"
+            className="bg-glacier-400 hover:bg-glacier-500 mt-3 border border-midnight-ocean-400 hover:border-midnight-ocean-500 flex items-center justify-between rounded-lg px-1.5 py-2 h-8 text-sm text-midnight-ocean-500 w-full"
           >
             How to improve your prompts
             <ChevronIcon size={16} />
