@@ -187,7 +187,7 @@ const checkIfResponseCompleted = (node: Node, platform: SupportedPlatform) => {
     );
 
     const micButton = document.querySelector(
-      'button[aria-label*="Microphone"], button[aria-label*="microphone"]',
+      'button[aria-label*="Dictate (^⇧D)"], button[aria-label*="Dictate (⌘⇧D)"]',
     ) as HTMLElement | null;
 
     const isMicVisible =
