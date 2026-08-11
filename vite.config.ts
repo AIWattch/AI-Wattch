@@ -10,16 +10,13 @@ console.log(`Building for target browser: ${TARGET_BROWSER}`);
 export default defineConfig({
   // @ts-ignore
   // Enable this in prod build for stores
-  esbuild: {
-    drop: ["console", "debugger"],
-  },
+  // esbuild: {
+  //   drop: ["console", "debugger"],
+  // },
   plugins: [react(), crx({ manifest, browser: TARGET_BROWSER })],
   server: {
     cors: {
       origin: [/chrome-extension:\/\//],
     },
-  },
-  test: {
-    environment: "jsdom",
   },
 });

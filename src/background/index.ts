@@ -17,12 +17,6 @@ import {
 import { MESSAGE_TYPES } from "../constants";
 import { fetchUserLocationInternal } from "../shared/utils/locationService";
 import { defaultConsumptionByPlatform } from "../shared/utils/defaults";
-import {
-  upsertDailyRecord,
-  incrementAllTimeTotal,
-  pruneOldRecords,
-} from "../lib/storageService";
-import { toProduct } from "../lib/product";
 
 console.log("Service worker started");
 
@@ -50,17 +44,6 @@ const processAIMetrics = async (
       const consumption = await calculateConsumptionApi(metrics, settings);
       if (consumption) {
         await addMetricsToSession({ ...metrics, ...consumption });
-
-        const product = toProduct(metrics.modelId ?? "");
-        const dailyData = {
-          energy_Wh: (consumption.energyKWh ?? 0) * 1000,
-          co2_g: (consumption.carbonEmissionsKgCO2e ?? 0) * 1000,
-          water_ml: consumption.waterConsumption ?? 0,
-          sessions: 1,
-          prompts: 1,
-        };
-        await upsertDailyRecord(product, dailyData);
-        await incrementAllTimeTotal(product, dailyData);
       }
     } else {
       const sessionData = await getTodaySessionData();
@@ -173,15 +156,11 @@ const notifyPopup = async (
 
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   if (changeInfo.status === "complete" && tab.url) {
-    try {
-      await sendToContentScript({
-        tabId: tabId,
-        type: MESSAGE_TYPES.PLATFORM_CHANGED,
-        data: { url: tab.url },
-      });
-    } catch {
-      // Content script not yet injected — normal on fresh tab load
-    }
+    await sendToContentScript({
+      tabId: tabId,
+      type: MESSAGE_TYPES.PLATFORM_CHANGED,
+      data: { url: tab.url },
+    });
   }
 });
 
@@ -268,6 +247,20 @@ const handleMessage = async (
         sendResponse(userLocation);
         return true;
 
+      case MESSAGE_TYPES.FETCH_IMAGE:
+        const res = await fetch(message.data.flagIcon, {
+          cache: "force-cache",
+        });
+        if (!res.ok) throw new Error("Failed to fetch icon");
+
+        const svgText = await res.text();
+        const blobUrl = URL.createObjectURL(
+          new Blob([svgText], { type: "image/svg+xml" }),
+        );
+
+        sendResponse(blobUrl);
+        return true;
+
       default:
         console.warn("AI Watch: Unknown message type:", message.type);
         sendResponse({ error: "Unknown message type" });
@@ -281,8 +274,6 @@ const handleMessage = async (
     return false;
   }
 };
-
-
 
 // Handle icon clicks
 let openPopupRetry = 0;
@@ -372,8 +363,6 @@ initBackground().catch((error) => {
   console.error("AI Watch: Critical initialization error:", error);
 });
 
-
-
 const ALLOWED_DOMAINS = [
   "https://chat.openai.com/*",
   "https://chatgpt.com/*",
@@ -418,11 +407,6 @@ const reloadAllowedTabs = async (): Promise<void> => {
     console.error("AI Watch: Error during tab reload:", error);
   }
 };
-
-// Prune old daily records on each browser startup
-chrome.runtime.onStartup.addListener(() => {
-  pruneOldRecords();
-});
 
 // Handle extension installation and updates
 chrome.runtime.onInstalled.addListener((details) => {

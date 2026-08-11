@@ -59,6 +59,6 @@ We aim to acknowledge receipt of your report within **48 hours**.
 
 ## Version Information
 
-- **Current Version:** 1.1.1 (MV3)
-- **Supported Platforms:** ChatGPT (Free/Plus), Claude.ai
+- **Current Version:** 1.1.7 (MV3)
+- **Supported Platforms:** ChatGPT (Free/Plus), Claude.ai, Gemini
 - **Last Security Review:** Jan 2026

@@ -1,7 +1,6 @@
 // Optimized session storage utilities with day buckets for blazingly fast access
 
 import { QueryMetric, SessionData, DayBucket } from "../../shared/types";
-import { browser } from "../../lib/browserApi";
 
 const STORAGE_KEY = "ai_wattch_session_data";
 
@@ -33,33 +32,45 @@ export const saveSessionData = async (
   sessionData: SessionData
 ): Promise<void> => {
   try {
-    await browser.storage.local.set({ [STORAGE_KEY]: sessionData });
-    console.log("AI Wattch: Session data saved", sessionData);
-  } catch {
-    // Fallback to localStorage for development
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionData));
-    console.log("AI Wattch: Session data saved to localStorage", sessionData);
+    if (typeof chrome !== "undefined" && chrome.storage?.local) {
+      await chrome.storage.local.set({
+        [STORAGE_KEY]: sessionData,
+      });
+      console.log("AI Wattch: Session data saved", sessionData);
+    } else {
+      // Fallback to localStorage for development
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionData));
+      console.log("AI Wattch: Session data saved to localStorage", sessionData);
+    }
+  } catch (error) {
+    console.error("AI Wattch: Failed to save session data:", error);
+    throw error;
   }
 };
 
 // Load session data from storage
 export const loadSessionData = async (): Promise<SessionData> => {
   try {
-    const result = await browser.storage.local.get([STORAGE_KEY]);
-    const sessionData = result[STORAGE_KEY] || createDefaultSessionData();
-    console.log("AI Wattch: Session data loaded", sessionData);
-    return sessionData;
-  } catch {
-    // Fallback to localStorage for development
-    const stored = localStorage.getItem(STORAGE_KEY);
-    const sessionData = stored
-      ? JSON.parse(stored)
-      : createDefaultSessionData();
-    console.log(
-      "AI Wattch: Session data loaded from localStorage",
-      sessionData
-    );
-    return sessionData;
+    if (typeof chrome !== "undefined" && chrome.storage?.local) {
+      const result = await chrome.storage.local.get([STORAGE_KEY]);
+      const sessionData = result[STORAGE_KEY] || createDefaultSessionData();
+      console.log("AI Wattch: Session data loaded", sessionData);
+      return sessionData;
+    } else {
+      // Fallback to localStorage for development
+      const stored = localStorage.getItem(STORAGE_KEY);
+      const sessionData = stored
+        ? JSON.parse(stored)
+        : createDefaultSessionData();
+      console.log(
+        "AI Wattch: Session data loaded from localStorage",
+        sessionData
+      );
+      return sessionData;
+    }
+  } catch (error) {
+    console.error("AI Wattch: Failed to load session data:", error);
+    return createDefaultSessionData();
   }
 };
 
@@ -174,15 +185,6 @@ export const resetSessionData = async (): Promise<SessionData> => {
   await saveSessionData(defaultSessionData);
   console.log("AI Wattch: Session data reset");
   return defaultSessionData;
-};
-
-// Resets only currentSession (the per-prompt display) — leaves dayBuckets intact.
-export const resetCurrentSession = async (): Promise<void> => {
-  const sessionData = await loadSessionData();
-  sessionData.currentSession = undefined;
-  sessionData.lastUpdated = Date.now();
-  await saveSessionData(sessionData);
-  console.log("AI Wattch: Current session reset");
 };
 
 // Clear old session data (older than specified days) - OPTIMIZED

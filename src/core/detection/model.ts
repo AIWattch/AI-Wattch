@@ -61,15 +61,22 @@ const detectGeminiModel = (): ModelInfo | null => {
     'button[data-test-id="bard-mode-menu-button"]',
   );
 
-  const text = btn?.textContent?.trim() || "";
+  const modelText = btn?.textContent?.trim() || "";
+  const normalized = modelText.toLowerCase();
 
-  console.log(text, "texxtttttttttttt");
+  console.log(modelText, "texxtttttttttttt");
 
-  if (text.includes("Pro")) {
-    const proModel = LLM_MODELS.find(
-      (m) => m.platform === "gemini" && m.modelName.includes("Gemini 3.1 Pro"),
+  const searchModel = LLM_MODELS.filter((model) => model.platform === "gemini")
+    .sort((a, b) => b.detectionName.length - a.detectionName.length)
+    .find((model) =>
+      model.detectionName
+        .split(",")
+        .map((name) => name.trim().toLowerCase())
+        .some((name) => normalized.includes(name)),
     );
-    if (proModel) modelInfo = proModel;
+
+  if (searchModel) {
+    modelInfo = searchModel;
   }
 
   updateSelectedModel({ ...modelInfo, autoDetected: true }).then(() => {
@@ -103,17 +110,17 @@ const detectClaudeModel = (): ModelInfo | null => {
     );
 
     if (target) {
-      const raw = target.textContent?.trim() ?? "";
-      // claude.ai may render "Claude Sonnet 4.6" or just "Sonnet 4.6"
-      const text = raw.replace(/^Claude\s+/i, "");
+      const text = target.textContent?.trim();
       const model = LLM_MODELS.find(
-        (model) => model.detectionName === text && model.platform === "claude",
+        (model) =>
+          text.includes(model.detectionName) && model.platform === "claude",
       );
       if (text && model) {
         modelInfo = model;
+        // updateSelectedModel(model);
       }
 
-      console.log("Found text:", raw, "→ normalised:", text);
+      console.log("Found text:", text);
     } else {
       console.log("Target div not found inside container.");
     }
