@@ -120,9 +120,7 @@ const initContent = () => {
   }
 
   initializePlatformMonitoring();
-  toggleModal().catch((err) =>
-    console.error("AI Wattch: Failed to open modal on init:", err)
-  );
+  toggleModal();
 };
 
 const initializePlatformMonitoring = () => {

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 
 import { GPTLogo } from "../../../icons/GPTLogo";
 import { ClaudeLogo } from "../../../icons/ClaudeLogo";
@@ -7,59 +7,13 @@ import {
   formatEmissions,
   formatEnergy,
 } from "../../../shared/utils/formatting";
-import { ConsumptionByPlatform, Consumption } from "../../../shared/types";
+import { ConsumptionByPlatform } from "../../../shared/types";
 import { InfoIcon } from "lucide-react";
 import { ChevronDownIcon, ChevronIcon } from "../../../icons";
 import SemiCircleChart from "../../../shared/components/SemiCircleChart";
 import { ImpactCard } from "./ImpactCard";
 import Tooltip from "../../../shared/components/Tooltip";
 import { GeminiLogo } from "../../../icons/GeminiLogo";
-import { getDailyRecords, getAllTimeTotal } from "../../../lib/storageService";
-import { aggregateRecords } from "../../../lib/aggregator";
-
-type Period = "today" | "week" | "month" | "alltime";
-
-const PERIOD_LABELS: Record<Period, string> = {
-  today: "Today's Sessions",
-  week: "This week's Sessions",
-  month: "This month's Sessions",
-  alltime: "All time Sessions",
-};
-
-const ZERO: Consumption = {
-  energyKWh: 0,
-  carbonEmissionsKgCO2e: 0,
-  metrics: { waterConsumption: 0, lightBulbMinutes: 0, smartphoneCharges: 0 },
-};
-
-function modelDataToConsumption(data?: {
-  energy_Wh: number;
-  co2_g: number;
-  water_ml: number;
-}): Consumption {
-  if (!data) return ZERO;
-  const energyKWh = data.energy_Wh / 1000;
-  return {
-    energyKWh,
-    carbonEmissionsKgCO2e: data.co2_g / 1000,
-    metrics: {
-      waterConsumption: data.water_ml,
-      lightBulbMinutes: energyKWh / 0.005,
-      smartphoneCharges: energyKWh / 0.04,
-    },
-  };
-}
-
-function byModelToConsumptionByPlatform(
-  byModel: Record<string, { energy_Wh: number; co2_g: number; water_ml: number }>
-): ConsumptionByPlatform {
-  return {
-    chatgptConsumption: modelDataToConsumption(byModel["ChatGPT"]),
-    claudeConsumption: modelDataToConsumption(byModel["Claude"]),
-    geminiConsumption: modelDataToConsumption(byModel["Gemini"]),
-    currentConsumption: { chatgpt: ZERO, claude: ZERO, gemini: ZERO },
-  };
-}
 
 export const SessionsCard: React.FC<{
   consumptionData: ConsumptionByPlatform;
@@ -68,59 +22,17 @@ export const SessionsCard: React.FC<{
   setIsExpanded: (value: boolean) => void;
 }> = ({ consumptionData, handleShowTips, isExpanded, setIsExpanded }) => {
   const [activeTab, setActiveTab] = useState<"emissions" | "energy">("energy");
-  const [period, setPeriod] = useState<Period>("today");
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [periodConsumption, setPeriodConsumption] =
-    useState<ConsumptionByPlatform | null>(null);
-
-  useEffect(() => {
-    if (period === "today") {
-      setPeriodConsumption(null);
-      return;
-    }
-    (async () => {
-      if (period === "week") {
-        const records = await getDailyRecords(7);
-        const rollup = aggregateRecords(records);
-        setPeriodConsumption(byModelToConsumptionByPlatform(rollup.byModel));
-      } else if (period === "month") {
-        const records = await getDailyRecords(30);
-        const rollup = aggregateRecords(records);
-        setPeriodConsumption(byModelToConsumptionByPlatform(rollup.byModel));
-      } else if (period === "alltime") {
-        const total = await getAllTimeTotal();
-        setPeriodConsumption(byModelToConsumptionByPlatform(total.byModel));
-      }
-    })();
-  }, [period]);
-
-  const activeConsumption =
-    period === "today" ? consumptionData : periodConsumption ?? consumptionData;
-
-  const getPeriodTag = (): string => {
-    if (period === "today") return "Today";
-    if (period === "week") {
-      const end = new Date();
-      const start = new Date();
-      start.setDate(end.getDate() - 6);
-      const fmt = (d: Date) =>
-        d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-      return `${fmt(start)} – ${fmt(end)}`;
-    }
-    if (period === "month") return "Rolling 30 days";
-    return "All time";
-  };
 
   const getRadialData = () => {
-    const chatgptEnergy = activeConsumption.chatgptConsumption.energyKWh || 0;
-    const claudeEnergy = activeConsumption.claudeConsumption.energyKWh || 0;
-    const geminiEnergy = activeConsumption.geminiConsumption.energyKWh || 0;
+    const chatgptEnergy = consumptionData.chatgptConsumption.energyKWh || 0;
+    const claudeEnergy = consumptionData.claudeConsumption.energyKWh || 0;
+    const geminiEnergy = consumptionData.geminiConsumption.energyKWh || 0;
     const chatgptEmission =
-      activeConsumption.chatgptConsumption.carbonEmissionsKgCO2e || 0;
+      consumptionData.chatgptConsumption.carbonEmissionsKgCO2e || 0;
     const claudeEmission =
-      activeConsumption.claudeConsumption.carbonEmissionsKgCO2e || 0;
+      consumptionData.claudeConsumption.carbonEmissionsKgCO2e || 0;
     const geminiEmission =
-      activeConsumption.geminiConsumption.carbonEmissionsKgCO2e || 0;
+      consumptionData.geminiConsumption.carbonEmissionsKgCO2e || 0;
 
     const energy = {
       total: formatEnergy(chatgptEnergy + claudeEnergy + geminiEnergy),
@@ -147,7 +59,14 @@ export const SessionsCard: React.FC<{
 
   const consumptionDataRadial = getRadialData();
   return (
-    <div className="bg-mist rounded-2xl mt-2">
+    <div
+      className="bg-mist rounded-2xl mt-2"
+      // style={{
+      //   marginLeft: "2px",
+      //   marginRight: "2px",
+      //   marginBottom: "2px",
+      // }}
+    >
       {/* Header */}
       {+consumptionDataRadial.total.value > 0 ? (
         <div
@@ -160,55 +79,14 @@ export const SessionsCard: React.FC<{
             title={
               <>
                 See the total environmental<br></br> impact of all your
-                sessions' AI <br></br>usage. Your data resets every<br></br> 24
+                sessions’ AI <br></br>usage. Your data resets every<br></br> 24
                 hours.
               </>
             }
           >
             <InfoIcon size={16} />
           </Tooltip>
-
-          {/* Period dropdown trigger */}
-          <div className="relative">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsDropdownOpen(!isDropdownOpen);
-              }}
-              className="flex items-center gap-1 text-sm font-normal"
-            >
-              {PERIOD_LABELS[period]}
-              <ChevronDownIcon
-                size={12}
-                className={`transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}
-              />
-            </button>
-            {isDropdownOpen && (
-              <div
-                className="absolute top-full left-0 mt-1 bg-white border border-grey-200 rounded-lg shadow-md z-10 min-w-[160px]"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {(["today", "week", "month", "alltime"] as Period[]).map(
-                  (p) => (
-                    <button
-                      key={p}
-                      onClick={() => {
-                        setPeriod(p);
-                        setIsDropdownOpen(false);
-                      }}
-                      className="w-full text-left px-3 py-2 text-xs hover:bg-mist flex items-center justify-between"
-                    >
-                      <span>{PERIOD_LABELS[p]}</span>
-                      {period === p && (
-                        <span className="text-glacier-500">✓</span>
-                      )}
-                    </button>
-                  )
-                )}
-              </div>
-            )}
-          </div>
-
+          <h3 className="text-sm font-normal ">Today's Sessions</h3>
           <button
             onClick={() => setIsExpanded(!isExpanded)}
             className="hover:bg-grey-100 rounded"
@@ -270,19 +148,20 @@ export const SessionsCard: React.FC<{
                 ]}
               />
               <div
-                className="absolute"
+                className="absolute "
                 style={{
                   top: "18px",
                   width: "97px",
                   height: "48.5px",
                   maxHeight: "48.5px",
                   overflow: "hidden",
+
                   left: "50%",
                   transform: "translate(-50%, 0%)",
                 }}
               >
                 <div
-                  className="flex justify-center"
+                  className=" flex  justify-center"
                   style={{
                     background:
                       "radial-gradient(117.69% 50% at 50% 0%, #FFFFFF 45.31%, #F0F5FB 100%)",
@@ -304,11 +183,6 @@ export const SessionsCard: React.FC<{
             </div>
           </div>
 
-          {/* Period tag */}
-          <div className="flex justify-center mt-1">
-            <span className="text-10 text-grey-500">{getPeriodTag()}</span>
-          </div>
-
           {/* Model Breakdown */}
           <div className="space-y-1 mt-2 px-4">
             {+consumptionDataRadial.chatgpt.value > 0 ? (
@@ -317,8 +191,12 @@ export const SessionsCard: React.FC<{
                 className="flex items-center justify-between"
               >
                 <div className="flex items-center gap-2">
-                  <div className="w-[5px] h-[5px] rounded-full bg-black"></div>
+                  <div
+                    className={`w-[5px] h-[5px] rounded-full bg-black`}
+                  ></div>
+
                   <GPTLogo size={13} fill="#000" />
+
                   <span className="text-xs text-grey-600">ChatGPT</span>
                 </div>
                 <span className="text-sm font-semibold text-obsidian">
@@ -333,8 +211,12 @@ export const SessionsCard: React.FC<{
             {+consumptionDataRadial.claude.value > 0 ? (
               <div key={"claude"} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-[5px] h-[5px] rounded-full bg-pumpkin-flipper"></div>
+                  <div
+                    className={`w-[5px] h-[5px]  rounded-full ${"bg-pumpkin-flipper"}`}
+                  ></div>
+
                   <ClaudeLogo size={13} />
+
                   <span className="text-xs text-grey-600">Claude</span>
                 </div>
                 <span className="text-sm font-semibold text-obsidian">
@@ -349,8 +231,12 @@ export const SessionsCard: React.FC<{
             {+consumptionDataRadial.gemini.value > 0 ? (
               <div key={"gemini"} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-[5px] h-[5px] rounded-full bg-[#4187F3]"></div>
+                  <div
+                    className={`w-[5px] h-[5px]  rounded-full bg-[#4187F3]`}
+                  ></div>
+
                   <GeminiLogo size={13} />
+
                   <span className="text-xs text-grey-600">Gemini</span>
                 </div>
                 <span className="text-sm font-semibold text-obsidian">
@@ -363,11 +249,11 @@ export const SessionsCard: React.FC<{
             ) : null}
           </div>
 
-          <ImpactCard consumptionData={activeConsumption} />
+          <ImpactCard consumptionData={consumptionData} />
 
           <button
             onClick={handleShowTips}
-            className="bg-glacier-400 hover:bg-glacier-500 mt-3 border border-midnight-ocean-400 hover:border-midnight-ocean-500 flex items-center justify-between rounded-lg px-1.5 py-2 h-8 text-sm text-midnight-ocean-500 w-full"
+            className="bg-glacier-400 hover:bg-glacier-500 mt-3 border border-midnight-ocean-400 hover:border-midnight-ocean-500 flex items-center justify-between rounded-lg   px-1.5 py-2 h-8 text-sm  text-midnight-ocean-500 w-full"
           >
             How to improve your prompts
             <ChevronIcon size={16} />

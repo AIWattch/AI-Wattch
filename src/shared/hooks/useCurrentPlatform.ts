@@ -25,6 +25,7 @@ export const useCurrentPlatform = (): PlatformDetails => {
       const platform = detectPlatform();
       setCurrentPlatform(platform);
       setPlatformName(platform ? getPlatformDisplayName(platform) : "");
+      setCurrentModel(null);
       setIsLoading(false);
     };
 
@@ -46,15 +47,34 @@ export const useCurrentPlatform = (): PlatformDetails => {
     const handleModelData = (force: boolean) => {
       if (!currentPlatform) return;
 
-      // Only detect if model is null or platform has changed
-      // added force detect when user comes from different tab
+      const selectedModelForPlatform =
+        selectedModel?.selectedModel?.platform === currentPlatform
+          ? selectedModel.selectedModel
+          : null;
+
+      // Only detect if model is null or platform has changed.
+      // If the stored selection belongs to a different platform, ignore it.
       const shouldDetectModel = currentModel === null || force;
 
       if (shouldDetectModel) {
-        const model = detectModel();
-        setCurrentModel(model);
-      } else if (selectedModel?.selectedModel) {
-        setCurrentModel(selectedModel.selectedModel);
+        const detectedModel = detectModel();
+
+        if (detectedModel && detectedModel.platform === currentPlatform) {
+          setCurrentModel(detectedModel);
+          return;
+        }
+
+        if (selectedModelForPlatform) {
+          setCurrentModel(selectedModelForPlatform);
+          return;
+        }
+
+        setCurrentModel(null);
+        return;
+      }
+
+      if (selectedModelForPlatform) {
+        setCurrentModel(selectedModelForPlatform);
       }
     };
 
@@ -69,7 +89,11 @@ export const useCurrentPlatform = (): PlatformDetails => {
     return () => {
       document.removeEventListener("visibilitychange", handleVisibility);
     };
-  }, [currentPlatform, selectedModel?.selectedModel?.modelName]);
+  }, [
+    currentPlatform,
+    selectedModel?.selectedModel?.modelName,
+    selectedModel?.selectedModel?.platform,
+  ]);
 
   return {
     currentPlatform,

@@ -5,7 +5,6 @@ import {
   fetchUserLocation,
   GLOBAL_LOCATION,
 } from "../../shared/utils/locationService";
-import { browser } from "../../lib/browserApi";
 
 export const SETTINGS_KEY = "ai_wattch_settings";
 
@@ -21,28 +20,40 @@ const createDefaultSettings = (): UserSettings => ({
 // Save user settings
 export const saveSettings = async (settings: UserSettings): Promise<void> => {
   try {
-    await browser.storage.local.set({ [SETTINGS_KEY]: settings });
-    console.log("AI Wattch: Settings saved", settings);
-  } catch {
-    // Fallback to localStorage for development
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-    console.log("AI Wattch: Settings saved to localStorage", settings);
+    if (typeof chrome !== "undefined" && chrome.storage?.local) {
+      await chrome.storage.local.set({
+        [SETTINGS_KEY]: settings,
+      });
+      console.log("AI Wattch: Settings saved", settings);
+    } else {
+      // Fallback to localStorage for development
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+      console.log("AI Wattch: Settings saved to localStorage", settings);
+    }
+  } catch (error) {
+    console.error("AI Wattch: Failed to save settings:", error);
+    throw error;
   }
 };
 
 // Load user settings
 export const loadSettings = async (): Promise<UserSettings> => {
   try {
-    const result = await browser.storage.local.get([SETTINGS_KEY]);
-    const settings = result[SETTINGS_KEY] || createDefaultSettings();
-    console.log("AI Wattch: Settings loaded", settings);
-    return settings;
-  } catch {
-    // Fallback to localStorage for development
-    const stored = localStorage.getItem(SETTINGS_KEY);
-    const settings = stored ? JSON.parse(stored) : createDefaultSettings();
-    console.log("AI Wattch: Settings loaded from localStorage", settings);
-    return settings;
+    if (typeof chrome !== "undefined" && chrome.storage?.local) {
+      const result = await chrome.storage.local.get([SETTINGS_KEY]);
+      const settings = result[SETTINGS_KEY] || createDefaultSettings();
+      console.log("AI Wattch: Settings loaded", settings);
+      return settings;
+    } else {
+      // Fallback to localStorage for development
+      const stored = localStorage.getItem(SETTINGS_KEY);
+      const settings = stored ? JSON.parse(stored) : createDefaultSettings();
+      console.log("AI Wattch: Settings loaded from localStorage", settings);
+      return settings;
+    }
+  } catch (error) {
+    console.error("AI Wattch: Failed to load settings:", error);
+    return createDefaultSettings();
   }
 };
 

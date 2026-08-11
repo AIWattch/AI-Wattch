@@ -16,6 +16,8 @@ let lastTokenTime: number = 0;
 let hasCodeBlock: boolean = false;
 let allowedToTrack: boolean = false;
 
+let geminiWasGenerating = false;
+
 const debounceDetectModel = debounce((node: Node) => {
   if (!node) return;
   if (!(node instanceof HTMLElement)) return;
@@ -162,24 +164,17 @@ const checkIfResponseCompleted = (node: Node, platform: SupportedPlatform) => {
     return false;
   }
 
-  if (!node.children[0]) {
-    console.log("DEBUG: Came here 2");
-    return false;
+  if (platform === "chatgpt" && node.textContent === "Response complete") {
+    return true;
   }
 
-  // Adding one more special case for chatgpt first message in new chat
-  if (
-    node.matches('span[data-state="closed"]') &&
-    node.querySelector('button[aria-label="Start Voice"]') &&
-    platform === "chatgpt"
-  ) {
-    return true;
+  if (!node.children[0]) {
+    return false;
   }
 
   // Adding one more special case for claude first message in new chat
   if (
     node.tagName === "DIV" &&
-    node.querySelector('button[data-state="closed"]') !== null &&
     node.children?.[0]?.children?.[1]?.tagName === "BUTTON" &&
     platform === "claude"
   ) {
@@ -187,16 +182,38 @@ const checkIfResponseCompleted = (node: Node, platform: SupportedPlatform) => {
   }
 
   if (platform === "gemini") {
-    // Typically in Gemini, generating stops when the send button is re-enabled/visible again,
-    // or the 'stop generating' square button disappears. Checking for a send button present and not disabled.
-    const sendBtn = document.querySelector('button[aria-label="Send message"]');
-    return !!sendBtn && !sendBtn.hasAttribute("disabled");
-  } else if (platform === "chatgpt") {
-    return (
-      node.getAttribute("data-testid") === "composer-speech-button-container" &&
-      (node.children[0].getAttribute("data-state") === "closed" ||
-        node.children[0]?.children?.[0].getAttribute("data-state") === "closed")
+    const isGenerating = !!document.querySelector(
+      'button[aria-label="Stop response"]',
     );
+
+    const micButton = document.querySelector(
+      'button[aria-label*="Microphone"], button[aria-label*="microphone"]',
+    ) as HTMLElement | null;
+
+    const isMicVisible =
+      micButton?.checkVisibility?.() ??
+      !!(micButton && micButton.offsetWidth > 0);
+
+    console.log({
+      geminiWasGenerating,
+      isGenerating,
+      isMicVisible,
+      hasStarted,
+    });
+
+    // Remember that generation started
+    if (isGenerating) {
+      geminiWasGenerating = true;
+      return false;
+    }
+
+    // Only fire once
+    if (geminiWasGenerating && isMicVisible) {
+      geminiWasGenerating = false;
+      return true;
+    }
+
+    return false;
   } else if (platform === "claude") {
     return (
       node.children[0].getAttribute("data-state") === "closed" &&
@@ -225,6 +242,7 @@ const ProcessResponse = (platform: SupportedPlatform) => {
     outputTextLength: 0,
     platform,
   };
+
   if (platform === "chatgpt") {
     console.log("DEBUG: Came here 5");
     const allOutputNodes = document.querySelectorAll(
@@ -237,9 +255,11 @@ const ProcessResponse = (platform: SupportedPlatform) => {
     if (allOutputNodes.length !== 0 && allInputNodes.length !== 0) {
       const outputNode = allOutputNodes[allOutputNodes.length - 1];
       const inputNode = allInputNodes[allInputNodes.length - 1];
-      console.log("DEBUG: Came here 6", { outputNode });
+
       const outputText = outputNode.innerText;
       const inputText = inputNode.innerText;
+
+      console.log("DEBUG: Came here 6", { outputNode });
 
       const outputTokens = estimateTokens(outputText || "");
       const inputTokens = estimateTokens(inputText || "");
@@ -352,41 +372,36 @@ export const createMessageObserver = (
     if (!allowedToTrack) return;
 
     mutations.forEach((mutation) => {
-      // Detect response completion when send button becomes re-enabled (attribute mutation)
+      // Claude: detect response completion when send button becomes re-enabled
       if (
         mutation.type === "attributes" &&
+        platform === "claude" &&
         hasStarted &&
         mutation.target instanceof HTMLElement &&
+        mutation.target.getAttribute("aria-label") === "Send message" &&
         !mutation.target.hasAttribute("disabled")
       ) {
-        const el = mutation.target;
-        const isChatGPTSend =
-          platform === "chatgpt" &&
-          el.tagName === "BUTTON" &&
-          (el.getAttribute("data-testid") === "send-button" ||
-            el.getAttribute("aria-label") === "Send prompt" ||
-            el.getAttribute("aria-label") === "Send message");
-
-        const isClaudeSend =
-          platform === "claude" &&
-          el.getAttribute("aria-label") === "Send message";
-
-        if (isChatGPTSend || isClaudeSend) {
-          hasStarted = false;
-          console.log(
-            `DEBUG: 👁️ AI Wattch: ${platform} response completed (send button re-enabled)`,
-          );
-          setLastTokenTime();
-          // Defer innerText reads outside the mutation callback to avoid forced reflow
-          setTimeout(() => {
-            const sendObject = ProcessResponse(platform);
-            onNewMessage(sendObject);
-          }, 0);
-          return;
-        }
+        hasStarted = false;
+        console.log(
+          "DEBUG: 👁️ AI Wattch: Claude response completed (send button re-enabled)",
+        );
+        setLastTokenTime();
+        const sendObject = ProcessResponse(platform);
+        onNewMessage(sendObject);
+        return;
       }
 
       if (mutation.type === "childList") {
+        mutation.removedNodes.forEach((node) => {
+          if (
+            platform === "gemini" &&
+            checkIfResponseCompleted(node, platform)
+          ) {
+            hasStarted = false;
+            setLastTokenTime();
+            onNewMessage(ProcessResponse(platform));
+          }
+        });
         if (
           platform === "claude" &&
           [...document.querySelectorAll('[class="text-sm"]')].find((e) =>
@@ -417,12 +432,15 @@ export const createMessageObserver = (
               hasStarted = false;
               console.log("DEBUG: 👁️ AI Wattch: Response completed detected");
 
+              // if (
+              //   node.children[0] &&
+              //   node.children[0].getAttribute("data-state") === "closed"
+              // ) {
               setLastTokenTime();
-              // Defer innerText reads outside the mutation callback to avoid forced reflow
-              setTimeout(() => {
-                const sendObject = ProcessResponse(platform);
-                onNewMessage(sendObject);
-              }, 0);
+
+              const sendObject = ProcessResponse(platform);
+
+              onNewMessage(sendObject);
             }
             // }
           });

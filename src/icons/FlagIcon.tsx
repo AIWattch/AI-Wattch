@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from "react";
+import { sendToBackground } from "../core";
+import { MESSAGE_TYPES } from "../constants";
 
 // In-memory cache of URL → blobURL
 const iconCache = new Map<string, string>();
@@ -33,7 +35,7 @@ const FlagIcon = ({
 
     const svgText = await res.text();
     const blobUrl = URL.createObjectURL(
-      new Blob([svgText], { type: "image/svg+xml" })
+      new Blob([svgText], { type: "image/svg+xml" }),
     );
 
     iconCache.set(url, blobUrl);
@@ -64,6 +66,14 @@ const FlagIcon = ({
       if (!refetch.current.hasRetriedFallback) {
         return setTimeout(() => getIconFallBack(true), 500);
       }
+      // background notification to fetch the icon
+      const blobUrl = await sendToBackground({
+        type: MESSAGE_TYPES.FETCH_IMAGE,
+        data: { flagIcon },
+      });
+      iconCache.set(flagIcon, blobUrl);
+
+      setSrc(blobUrl);
       console.error("Failed to load fallback flag:", err);
     }
   };

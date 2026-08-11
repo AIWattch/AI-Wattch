@@ -99,7 +99,7 @@ import {
 } from "../../icons";
 
 import Tooltip from "./Tooltip";
-import { resetCurrentSession } from "../../core";
+import { resetSessionData } from "../../core";
 import MinimizedIcon from "../../icons/MinimizedIcon";
 
 const Layout = ({
@@ -183,11 +183,11 @@ const Layout = ({
             <button
               onClick={async () => {
                 setIsResetting(true);
-                await resetCurrentSession();
-                setTimeout(() => setIsResetting(false), 500);
+                await resetSessionData();
+                setTimeout(() => setIsResetting(false), 1000);
               }}
             >
-              <Tooltip position="bottom" title="Reset current prompt">
+              <Tooltip position="bottom" title="Reset">
                 <RefreshIcon size={16} />
               </Tooltip>
             </button>
