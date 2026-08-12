@@ -533,6 +533,12 @@ export const LLM_MODELS: ModelInfo[] = [
     modelId: "gemini-3.6-flash",
   },
   {
+    modelName: "Gemini 3.6 Thinking",
+    detectionName: "Thinking",
+    platform: "gemini",
+    modelId: "gemini-3.6-thinking",
+  },
+  {
     modelName: "Gemini 3.5 Flash-Lite",
     detectionName: "Flash-Lite",
     platform: "gemini",
