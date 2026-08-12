@@ -86,3 +86,6 @@ jspm_packages/
 dist/
 
 .claude
+
+releases/*.zip
+*/.git/
