@@ -1,0 +1,47 @@
+name: Auto Release on Version Change
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'package.json'
+
+jobs:
+  check-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Needed to create tags and releases
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Need history to verify tags
+
+      - name: Read version from package.json
+        id: pkg
+        run: |
+          VERSION=$(jq -r .version package.json)
+          echo "version=v$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Found version $VERSION in package.json"
+          
+      - name: Check if tag exists
+        id: check_tag
+        run: |
+          # Use git ls-remote to check if the tag exists on the remote
+          if git ls-remote --tags origin refs/tags/${{ steps.pkg.outputs.version }} | grep -q ${{ steps.pkg.outputs.version }}; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Tag ${{ steps.pkg.outputs.version }} already exists. Skipping release."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "Tag ${{ steps.pkg.outputs.version }} does not exist. Creating new release."
+          fi
+
+      - name: Create Release
+        if: steps.check_tag.outputs.exists == 'false'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create ${{ steps.pkg.outputs.version }} \
+            --title "Release ${{ steps.pkg.outputs.version }}" \
+            --generate-notes
