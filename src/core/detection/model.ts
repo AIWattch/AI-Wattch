@@ -52,39 +52,206 @@ const detectChatGPTModel = (): ModelInfo | null => {
   return { ...modelInfo, autoDetected: true };
 };
 
-// Detect model for Gemini
 const detectGeminiModel = (): ModelInfo | null => {
   let modelInfo = DEFAULT_DETECTION_MODEL.gemini;
 
-  // Target ONLY the correct button
-  const btn = document.querySelector(
+  const btn = document.querySelector<HTMLElement>(
     'button[data-test-id="bard-mode-menu-button"]',
   );
 
-  const modelText = btn?.textContent?.trim() || "";
-  const normalized = modelText.toLowerCase();
-
-  console.log(modelText, "texxtttttttttttt");
-
-  const searchModel = LLM_MODELS.filter((model) => model.platform === "gemini")
-    .sort((a, b) => b.detectionName.length - a.detectionName.length)
-    .find((model) =>
-      model.detectionName
-        .split(",")
-        .map((name) => name.trim().toLowerCase())
-        .some((name) => normalized.includes(name)),
-    );
-
-  if (searchModel) {
-    modelInfo = searchModel;
+  if (!btn) {
+    return { ...modelInfo, autoDetected: true };
   }
 
-  updateSelectedModel({ ...modelInfo, autoDetected: true }).then(() => {
-    console.log("AI Wattch: Model info updated", modelInfo);
+  const menuSelector = '[data-test-id="bard-mode-desktop-gem-menu"]';
+
+  const getModelFromLabel = (label: string): ModelInfo | null => {
+    const normalizedLabel = label.replace(/\s+/g, " ").trim();
+
+    return (
+      LLM_MODELS.find(
+        (model) =>
+          model.platform === "gemini" &&
+          model.modelName === `Gemini ${normalizedLabel}`,
+      ) || null
+    );
+  };
+
+  const updateModel = (label: string) => {
+    const matchedModel = getModelFromLabel(label);
+
+    if (!matchedModel) {
+      console.log("AI Wattch: Gemini model not found:", label);
+      return;
+    }
+
+    modelInfo = matchedModel;
+
+    updateSelectedModel({
+      ...matchedModel,
+      autoDetected: true,
+    }).then(() => {
+      console.log("AI Wattch: Gemini model updated:", matchedModel);
+    });
+  };
+
+  /*
+   * ---------------------------------------------------------
+   * 1. Install the user-selection listener ONLY ONCE
+   * ---------------------------------------------------------
+   */
+
+  if (btn.dataset.aiwattchGeminiListener !== "true") {
+    btn.dataset.aiwattchGeminiListener = "true";
+
+    document.addEventListener(
+      "click",
+      (event) => {
+        const target = event.target as Element | null;
+
+        const option = target?.closest('[data-test-id^="bard-mode-option-"]');
+
+        if (!option) {
+          return;
+        }
+
+        const label = option.querySelector(".label")?.textContent?.trim() || "";
+
+        if (!label) {
+          return;
+        }
+
+        /*
+         * Capture the model BEFORE Gemini closes/removes
+         * the dropdown.
+         */
+        updateModel(label);
+      },
+      true,
+    );
+  }
+
+  /*
+   * ---------------------------------------------------------
+   * 2. If the menu is already open, NEVER click the button
+   * ---------------------------------------------------------
+   */
+
+  const existingMenu = document.querySelector(menuSelector);
+
+  if (existingMenu) {
+    const selectedModel = existingMenu.querySelector(
+      '[data-test-id^="bard-mode-option-"].selected',
+    );
+
+    const label =
+      selectedModel?.querySelector(".label")?.textContent?.trim() || "";
+
+    if (label) {
+      updateModel(label);
+    }
+
+    return {
+      ...modelInfo,
+      autoDetected: true,
+    };
+  }
+
+  /*
+   * ---------------------------------------------------------
+   * 3. Initial detection only
+   *
+   * This is the ONLY place where we click the Gemini button.
+   *
+   * The DOM dataset flag survives repeated calls to this
+   * function, so calling this function every second cannot
+   * keep opening/closing the menu.
+   * ---------------------------------------------------------
+   */
+
+  if (btn.dataset.aiwattchGeminiInitialDetection === "true") {
+    return {
+      ...modelInfo,
+      autoDetected: true,
+    };
+  }
+
+  btn.dataset.aiwattchGeminiInitialDetection = "true";
+
+  /*
+   * Mark that WE opened the menu.
+   */
+  btn.dataset.aiwattchGeminiOpenedByDetector = "true";
+
+  /*
+   * Open exactly once.
+   */
+  btn.click();
+
+  /*
+   * Wait for Angular/CDK to render the menu.
+   */
+  const observer = new MutationObserver(() => {
+    const menu = document.querySelector(menuSelector);
+
+    if (!menu) {
+      return;
+    }
+
+    observer.disconnect();
+
+    const selectedModel = menu.querySelector(
+      '[data-test-id^="bard-mode-option-"].selected',
+    );
+
+    const label =
+      selectedModel?.querySelector(".label")?.textContent?.trim() || "";
+
+    if (label) {
+      updateModel(label);
+    }
+
+    /*
+     * IMPORTANT:
+     * Only close the menu if WE opened it.
+     *
+     * If the user has already interacted with the menu,
+     * don't touch it.
+     */
+    setTimeout(() => {
+      const currentMenu = document.querySelector(menuSelector);
+
+      const openedByDetector =
+        btn.dataset.aiwattchGeminiOpenedByDetector === "true";
+
+      if (currentMenu && openedByDetector) {
+        btn.click();
+      }
+
+      delete btn.dataset.aiwattchGeminiOpenedByDetector;
+    }, 100);
   });
 
-  return { ...modelInfo, autoDetected: true };
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true,
+  });
+
+  /*
+   * Safety cleanup.
+   */
+  setTimeout(() => {
+    observer.disconnect();
+
+    delete btn.dataset.aiwattchGeminiOpenedByDetector;
+  }, 2000);
+
+  return {
+    ...modelInfo,
+    autoDetected: true,
+  };
 };
+
 // Detect model for Claude
 const detectClaudeModel = (): ModelInfo | null => {
   // Try to find model selector or model name
