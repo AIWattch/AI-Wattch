@@ -443,6 +443,12 @@ export const LLM_MODELS: ModelInfo[] = [
     modelId: "claude-sonnet-4-6",
   },
   {
+    modelName: "Claude Opus 5.5",
+    detectionName: "Opus 5.5",
+    platform: "claude",
+    modelId: "claude-opus-5.5",
+  },
+  {
     modelName: "Claude Fable 5.1",
     detectionName: "Fable 5.1",
     platform: "claude",
