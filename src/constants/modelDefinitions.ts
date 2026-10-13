@@ -443,6 +443,12 @@ export const LLM_MODELS: ModelInfo[] = [
     modelId: "claude-sonnet-4-6",
   },
   {
+    modelName: "Claude Haiku 5.5",
+    detectionName: "Haiku 5.5",
+    platform: "claude",
+    modelId: "claude-haiku-5-5",
+  },
+  {
     modelName: "Claude Sonnet 5.5",
     detectionName: "Sonnet 5.5",
     platform: "claude",
