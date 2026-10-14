@@ -37,7 +37,9 @@ const setStartTime = () => {
 const addEnterKeyEventListeners = (platform: SupportedPlatform) => {
   const inputElement =
     platform === "chatgpt"
-      ? document.getElementById("prompt-textarea")
+      ? document.getElementById("prompt-textarea") ||
+        document.querySelector('[aria-label="Ask ChatGPT"]') ||
+        document.querySelector('[aria-label="Chat with ChatGPT"]')
       : platform === "gemini"
         ? document.querySelector("rich-textarea") ||
           document.querySelector('div[contenteditable="true"]')
@@ -160,14 +162,13 @@ const checkIfResponseCompleted = (node: Node, platform: SupportedPlatform) => {
       return true;
     }
   }
+  if (platform === "chatgpt" && node.textContent === "Response complete") {
+    return true;
+  }
 
   if (!hasStarted || !(node instanceof HTMLElement)) {
     console.log("DEBUG: Came here 1");
     return false;
-  }
-
-  if (platform === "chatgpt" && node.textContent === "Response complete") {
-    return true;
   }
 
   if (!node.children[0]) {
