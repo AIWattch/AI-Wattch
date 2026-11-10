@@ -17,6 +17,7 @@ import {
 import { MESSAGE_TYPES } from "../constants";
 import { fetchUserLocationInternal } from "../shared/utils/locationService";
 import { defaultConsumptionByPlatform } from "../shared/utils/defaults";
+import { updateDiagnostic } from "../shared/utils/diagnostics";
 
 console.log("Service worker started");
 
@@ -42,8 +43,15 @@ const processAIMetrics = async (
       }
 
       const consumption = await calculateConsumptionApi(metrics, settings);
+      await updateDiagnostic(metrics, {
+        calculation: consumption ? "success" : "no_result",
+        energyKWh: consumption?.energyKWh,
+      });
       if (consumption) {
         await addMetricsToSession({ ...metrics, ...consumption });
+        await updateDiagnostic(metrics, { saved: true });
+      } else {
+        await updateDiagnostic(metrics, { saved: false });
       }
     } else {
       const sessionData = await getTodaySessionData();

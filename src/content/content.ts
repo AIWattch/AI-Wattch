@@ -11,6 +11,7 @@ import { toggleModal } from "./modal";
 import { MESSAGE_TYPES } from "../constants";
 import { QueryMetric } from "../shared/types";
 import { detectModel } from "../core/detection/model";
+import { updateDiagnostic } from "../shared/utils/diagnostics";
 
 const checkExtensionContext = (): boolean => {
   try {
@@ -30,6 +31,7 @@ const processDetectedMessage = async (message: QueryMetric) => {
   console.log("AI Wattch: Processing detected message", message);
   // Send data to background script
   try {
+    await updateDiagnostic(message, { extracted: true, sent: true });
     await sendToBackground({ type: MESSAGE_TYPES.AI_METRICS, data: message });
     console.log("AI Wattch: Metrics sent to background", message);
   } catch (error) {
