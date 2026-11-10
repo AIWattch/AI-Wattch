@@ -1,4 +1,5 @@
-import { QueryMetric } from "../types";
+import { QueryMetric, UserSettings } from "../types";
+import { SETTINGS_KEY } from "../../core/storage/settings";
 
 const DIAGNOSTICS_KEY = "ai_wattch_diagnostics_v1";
 
@@ -38,9 +39,18 @@ export const updateDiagnostic = async (
     try {
       if (typeof chrome === "undefined" || !chrome.storage?.local) return;
 
+      // Single read covers both the gate-check and the existing traces, so
+      // enabling/disabling the setting takes effect immediately (no stale
+      // cache) at no extra storage round-trip cost.
+      const stored = await chrome.storage.local.get([
+        SETTINGS_KEY,
+        DIAGNOSTICS_KEY,
+      ]);
+      const settings = stored[SETTINGS_KEY] as UserSettings | undefined;
+      if (!settings?.diagnosticsMode) return; // feature is off: collect nothing
+
       const traceId = String(metric.startTime || Date.now() / 1000);
-      const result = await chrome.storage.local.get(DIAGNOSTICS_KEY);
-      const traces = (result[DIAGNOSTICS_KEY] || []) as DiagnosticTrace[];
+      const traces = (stored[DIAGNOSTICS_KEY] || []) as DiagnosticTrace[];
       const existing = traces.find((trace) => trace.traceId === traceId);
       const base: DiagnosticTrace = existing || {
         traceId,

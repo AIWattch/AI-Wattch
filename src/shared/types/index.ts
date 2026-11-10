@@ -132,6 +132,10 @@ export interface UserSettings {
   location: Location | null;
   hasSeenWelcome?: boolean;
   allowedToTrack?: boolean;
+  // Troubleshooting aid: shows per-prompt extraction/calculation status in
+  // the dashboard. Off by default - nothing is collected or displayed
+  // unless a user explicitly turns it on. Local only (chrome.storage.local).
+  diagnosticsMode?: boolean;
 }
 
 export type SupportedPlatform = "chatgpt" | "claude" | "gemini";

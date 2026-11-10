@@ -4,6 +4,7 @@ import {
   DiagnosticTrace,
   getDiagnostics,
 } from "../../../shared/utils/diagnostics";
+import { useSettings } from "../../../shared/hooks/useSettings";
 
 const Status: React.FC<{ label: string; value?: string }> = ({ label, value }) => (
   <span className="mr-2 whitespace-nowrap">
@@ -12,6 +13,7 @@ const Status: React.FC<{ label: string; value?: string }> = ({ label, value }) =
 );
 
 export const DiagnosticsPanel: React.FC = () => {
+  const { settings } = useSettings();
   const [traces, setTraces] = useState<DiagnosticTrace[]>([]);
 
   const refresh = useCallback(async () => {
@@ -31,6 +33,10 @@ export const DiagnosticsPanel: React.FC = () => {
     await clearDiagnostics();
     setTraces([]);
   };
+
+  // Off by default - render nothing (not even an empty shell) until the
+  // user explicitly turns Diagnostics Mode on in Settings.
+  if (!settings?.diagnosticsMode) return null;
 
   return (
     <section className="mt-3 mx-1 p-2 rounded-lg border border-grey-200 bg-midnight-ocean-400 text-white">

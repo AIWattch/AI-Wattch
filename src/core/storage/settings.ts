@@ -15,6 +15,7 @@ const createDefaultSettings = (): UserSettings => ({
   location: GLOBAL_LOCATION,
   hasSeenWelcome: false,
   allowedToTrack: false,
+  diagnosticsMode: false,
 });
 
 // Save user settings
