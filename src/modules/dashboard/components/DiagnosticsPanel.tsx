@@ -51,8 +51,15 @@ export const DiagnosticsPanel: React.FC = () => {
               </div>
               <div className="text-grey-300 mb-1">{trace.inputChars} input chars · {trace.outputChars} output chars</div>
               <div className="flex flex-wrap text-grey-100">
-                <Status label="Extracted" value={trace.extracted ? "yes" : "—"} />
-                <Status label="Sent" value={trace.sent ? "yes" : "—"} />
+                <Status
+                  label="User node"
+                  value={trace.userNodeFound === undefined ? "—" : trace.userNodeFound ? "found" : "NOT FOUND"}
+                />
+                <Status
+                  label="Assistant node"
+                  value={trace.assistantNodeFound === undefined ? "—" : trace.assistantNodeFound ? "found" : "NOT FOUND"}
+                />
+                <Status label="Sent" value={trace.sent === undefined ? "—" : trace.sent ? "yes" : "no"} />
                 <Status label="API" value={trace.calculation || "—"} />
                 <Status label="Saved" value={trace.saved === undefined ? "—" : trace.saved ? "yes" : "no"} />
               </div>

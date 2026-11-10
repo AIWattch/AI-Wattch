@@ -21,14 +21,9 @@ export const PLATFORM_CONFIGS: Record<SupportedPlatform, PlatformInfo> = {
     name: "ChatGPT",
     domain: "chatgpt.com",
     selectors: {
-      messages: [
-        "[data-message-author-role='assistant']",
-        "[data-message-author-role='user']",
-        "[data-testid='conversation-turn-3']",
-        "[data-testid='conversation-turn-4']",
-      ],
+      messages: ["[data-dil-response]", "[data-user-message-bubble]"],
       input: ["#prompt-textarea", "[data-testid='textbox']"],
-      response: ["[data-message-author-role='assistant']"],
+      response: ["[data-dil-response]"],
     },
     tokenEstimation: {
       factor: 0.25, // ~4 characters per token

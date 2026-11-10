@@ -30,11 +30,18 @@ let messageObserver: MutationObserver | null = null;
 const processDetectedMessage = async (message: QueryMetric) => {
   console.log("AI Wattch: Processing detected message", message);
   // Send data to background script
+  // Note: node-found status and text lengths are already recorded by
+  // ProcessResponse at extraction time; this only reports whether the
+  // message reached the background script.
   try {
-    await updateDiagnostic(message, { extracted: true, sent: true });
     await sendToBackground({ type: MESSAGE_TYPES.AI_METRICS, data: message });
+    await updateDiagnostic(message, { sent: true });
     console.log("AI Wattch: Metrics sent to background", message);
   } catch (error) {
+    await updateDiagnostic(message, {
+      sent: false,
+      error: error instanceof Error ? error.message : "Failed to send metrics",
+    });
     console.error("AI Wattch: Failed to send metrics:", error);
   }
 };
