@@ -38,6 +38,19 @@ export const DiagnosticsPanel: React.FC = () => {
   // user explicitly turns Diagnostics Mode on in Settings.
   if (!settings?.diagnosticsMode) return null;
 
+  // Grouped by platform for display only - the stored list and its "last 5"
+  // cap are unchanged. Platform comes straight off each trace's own metric,
+  // so unlike the global selected-model setting it can't get mixed up
+  // between tabs running different platforms at once.
+  const byPlatform = traces.reduce<Record<string, DiagnosticTrace[]>>(
+    (groups, trace) => {
+      if (!groups[trace.platform]) groups[trace.platform] = [];
+      groups[trace.platform].push(trace);
+      return groups;
+    },
+    {},
+  );
+
   return (
     <section className="mt-3 mx-1 p-2 rounded-lg border border-grey-200 bg-midnight-ocean-400 text-white">
       <div className="flex items-center justify-between mb-2">
@@ -48,29 +61,36 @@ export const DiagnosticsPanel: React.FC = () => {
       {traces.length === 0 ? (
         <p className="text-[10px] text-grey-300">No prompts recorded yet. Send a new prompt while AI Wattch is active.</p>
       ) : (
-        <div className="flex flex-col gap-2">
-          {traces.map((trace) => (
-            <div key={trace.traceId} className="border-t border-grey-200 pt-2 text-[10px]">
-              <div className="flex justify-between mb-1">
-                <strong>{trace.platform} · {new Date(trace.updatedAt).toLocaleTimeString()}</strong>
-                <span>{trace.inputTokens} in / {trace.outputTokens} out tokens</span>
+        <div className="flex flex-col gap-3">
+          {Object.entries(byPlatform).map(([platform, platformTraces]) => (
+            <div key={platform}>
+              <p className="text-[10px] font-semibold uppercase text-glacier-400 mb-1">{platform}</p>
+              <div className="flex flex-col gap-2">
+                {platformTraces.map((trace) => (
+                  <div key={trace.traceId} className="border-t border-grey-200 pt-2 text-[10px]">
+                    <div className="flex justify-between mb-1">
+                      <span className="text-grey-300">{new Date(trace.updatedAt).toLocaleTimeString()}</span>
+                      <span>{trace.inputTokens} in / {trace.outputTokens} out tokens</span>
+                    </div>
+                    <div className="text-grey-300 mb-1">{trace.inputChars} input chars · {trace.outputChars} output chars</div>
+                    <div className="flex flex-wrap text-grey-100">
+                      <Status
+                        label="User node"
+                        value={trace.userNodeFound === undefined ? "—" : trace.userNodeFound ? "found" : "NOT FOUND"}
+                      />
+                      <Status
+                        label="Assistant node"
+                        value={trace.assistantNodeFound === undefined ? "—" : trace.assistantNodeFound ? "found" : "NOT FOUND"}
+                      />
+                      <Status label="Sent" value={trace.sent === undefined ? "—" : trace.sent ? "yes" : "no"} />
+                      <Status label="API" value={trace.calculation || "—"} />
+                      <Status label="Saved" value={trace.saved === undefined ? "—" : trace.saved ? "yes" : "no"} />
+                    </div>
+                    {trace.energyKWh !== undefined && <div className="text-grey-300 mt-1">Energy: {trace.energyKWh.toExponential(3)} kWh</div>}
+                    {trace.error && <div className="text-red-300 mt-1">{trace.error}</div>}
+                  </div>
+                ))}
               </div>
-              <div className="text-grey-300 mb-1">{trace.inputChars} input chars · {trace.outputChars} output chars</div>
-              <div className="flex flex-wrap text-grey-100">
-                <Status
-                  label="User node"
-                  value={trace.userNodeFound === undefined ? "—" : trace.userNodeFound ? "found" : "NOT FOUND"}
-                />
-                <Status
-                  label="Assistant node"
-                  value={trace.assistantNodeFound === undefined ? "—" : trace.assistantNodeFound ? "found" : "NOT FOUND"}
-                />
-                <Status label="Sent" value={trace.sent === undefined ? "—" : trace.sent ? "yes" : "no"} />
-                <Status label="API" value={trace.calculation || "—"} />
-                <Status label="Saved" value={trace.saved === undefined ? "—" : trace.saved ? "yes" : "no"} />
-              </div>
-              {trace.energyKWh !== undefined && <div className="text-grey-300 mt-1">Energy: {trace.energyKWh.toExponential(3)} kWh</div>}
-              {trace.error && <div className="text-red-300 mt-1">{trace.error}</div>}
             </div>
           ))}
         </div>
