@@ -6,7 +6,7 @@ import { detectModel } from "./model";
 import { SupportedPlatform } from "./platform";
 import { QueryMetric } from "../../shared/types";
 import { loadSettings } from "../storage";
-import { updateDiagnostic } from "../../shared/utils/diagnostics";
+import { recordDiagnostic } from "../../shared/utils/diagnostics";
 
 // Init time-based variables
 let hasStarted: boolean = false;
@@ -287,7 +287,7 @@ const ProcessResponse = (platform: SupportedPlatform) => {
       });
     }
 
-    void updateDiagnostic(sendObject, { userNodeFound, assistantNodeFound });
+    void recordDiagnostic(sendObject, { userNodeFound, assistantNodeFound });
     if (assistantNodeFound && userNodeFound) return sendObject;
   } else if (platform === "claude") {
     const allOutputNode = document.querySelectorAll(
@@ -332,7 +332,7 @@ const ProcessResponse = (platform: SupportedPlatform) => {
       sendObject.outputTextLength = outputText.length;
     }
 
-    void updateDiagnostic(sendObject, { userNodeFound, assistantNodeFound });
+    void recordDiagnostic(sendObject, { userNodeFound, assistantNodeFound });
     if (assistantNodeFound && userNodeFound) return sendObject;
   } else if (platform === "gemini") {
     const allOutputNodes = document.querySelectorAll(
@@ -367,7 +367,7 @@ const ProcessResponse = (platform: SupportedPlatform) => {
       });
     }
 
-    void updateDiagnostic(sendObject, { userNodeFound, assistantNodeFound });
+    void recordDiagnostic(sendObject, { userNodeFound, assistantNodeFound });
     if (assistantNodeFound && userNodeFound) return sendObject;
   }
 

@@ -26,6 +26,7 @@ let isInitialized = false;
 // Process AI metrics with better error handling
 const processAIMetrics = async (
   metrics?: QueryMetric | null,
+  tabId?: number,
 ): Promise<ConsumptionByPlatform> => {
   console.log("AI Watch: Processing metrics", metrics);
   const settings = await loadSettings();
@@ -44,14 +45,15 @@ const processAIMetrics = async (
 
       const consumption = await calculateConsumptionApi(metrics, settings);
       await updateDiagnostic(metrics, {
+        tabId,
         calculation: consumption ? "success" : "no_result",
         energyKWh: consumption?.energyKWh,
       });
       if (consumption) {
         await addMetricsToSession({ ...metrics, ...consumption });
-        await updateDiagnostic(metrics, { saved: true });
+        await updateDiagnostic(metrics, { tabId, saved: true });
       } else {
-        await updateDiagnostic(metrics, { saved: false });
+        await updateDiagnostic(metrics, { tabId, saved: false });
       }
     } else {
       const sessionData = await getTodaySessionData();
@@ -247,8 +249,15 @@ const handleMessage = async (
   try {
     switch (message.type) {
       case MESSAGE_TYPES.AI_METRICS:
-        await processAIMetrics(message.data);
+        await processAIMetrics(message.data, sender.tab?.id);
         sendResponse({ success: true });
+        return true;
+
+      case MESSAGE_TYPES.GET_TAB_ID:
+        // Content scripts have no chrome.tabs API of their own; this lets
+        // them learn their own tab id from the message sender, so
+        // diagnostics can be scoped per tab.
+        sendResponse(sender.tab?.id ?? null);
         return true;
 
       case MESSAGE_TYPES.GET_SESSION_DATA:

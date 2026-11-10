@@ -11,7 +11,7 @@ import { toggleModal } from "./modal";
 import { MESSAGE_TYPES } from "../constants";
 import { QueryMetric } from "../shared/types";
 import { detectModel } from "../core/detection/model";
-import { updateDiagnostic } from "../shared/utils/diagnostics";
+import { recordDiagnostic } from "../shared/utils/diagnostics";
 
 const checkExtensionContext = (): boolean => {
   try {
@@ -35,10 +35,10 @@ const processDetectedMessage = async (message: QueryMetric) => {
   // message reached the background script.
   try {
     await sendToBackground({ type: MESSAGE_TYPES.AI_METRICS, data: message });
-    await updateDiagnostic(message, { sent: true });
+    await recordDiagnostic(message, { sent: true });
     console.log("AI Wattch: Metrics sent to background", message);
   } catch (error) {
-    await updateDiagnostic(message, {
+    await recordDiagnostic(message, {
       sent: false,
       error: error instanceof Error ? error.message : "Failed to send metrics",
     });
