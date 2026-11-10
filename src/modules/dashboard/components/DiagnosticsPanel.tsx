@@ -12,62 +12,12 @@ const Status: React.FC<{ label: string; value?: string }> = ({ label, value }) =
   </span>
 );
 
-const ModelSection: React.FC<{ model: string; traces: DiagnosticTrace[] }> = ({
-  model,
-  traces,
-}) => {
-  const succeeded = traces.filter((trace) => trace.saved).length;
-  const nodesMissing = traces.filter(
-    (trace) => trace.userNodeFound === false || trace.assistantNodeFound === false,
-  ).length;
-
-  return (
-    <div className="border-t border-grey-200 pt-2">
-      <div className="flex items-center justify-between mb-1">
-        <strong className="text-[11px]">{model}</strong>
-        <span className="text-[10px] text-grey-300">
-          {traces.length} prompt{traces.length === 1 ? "" : "s"} · {succeeded} saved
-          {nodesMissing > 0 ? ` · ${nodesMissing} node(s) not found` : ""}
-        </span>
-      </div>
-      <div className="flex flex-col gap-2">
-        {traces.map((trace) => (
-          <div key={trace.traceId} className="text-[10px]">
-            <div className="flex justify-between mb-1">
-              <span className="text-grey-300">
-                {trace.platform} · {new Date(trace.updatedAt).toLocaleTimeString()}
-              </span>
-              <span>{trace.inputTokens} in / {trace.outputTokens} out tokens</span>
-            </div>
-            <div className="text-grey-300 mb-1">{trace.inputChars} input chars · {trace.outputChars} output chars</div>
-            <div className="flex flex-wrap text-grey-100">
-              <Status
-                label="User node"
-                value={trace.userNodeFound === undefined ? "—" : trace.userNodeFound ? "found" : "NOT FOUND"}
-              />
-              <Status
-                label="Assistant node"
-                value={trace.assistantNodeFound === undefined ? "—" : trace.assistantNodeFound ? "found" : "NOT FOUND"}
-              />
-              <Status label="Sent" value={trace.sent === undefined ? "—" : trace.sent ? "yes" : "no"} />
-              <Status label="API" value={trace.calculation || "—"} />
-              <Status label="Saved" value={trace.saved === undefined ? "—" : trace.saved ? "yes" : "no"} />
-            </div>
-            {trace.energyKWh !== undefined && <div className="text-grey-300 mt-1">Energy: {trace.energyKWh.toExponential(3)} kWh</div>}
-            {trace.error && <div className="text-red-300 mt-1">{trace.error}</div>}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
 export const DiagnosticsPanel: React.FC = () => {
   const { settings } = useSettings();
-  const [byModel, setByModel] = useState<Record<string, DiagnosticTrace[]>>({});
+  const [traces, setTraces] = useState<DiagnosticTrace[]>([]);
 
   const refresh = useCallback(async () => {
-    setByModel(await getDiagnostics());
+    setTraces(await getDiagnostics());
   }, []);
 
   useEffect(() => {
@@ -81,28 +31,47 @@ export const DiagnosticsPanel: React.FC = () => {
 
   const clear = async () => {
     await clearDiagnostics();
-    setByModel({});
+    setTraces([]);
   };
 
   // Off by default - render nothing (not even an empty shell) until the
   // user explicitly turns Diagnostics Mode on in Settings.
   if (!settings?.diagnosticsMode) return null;
 
-  const models = Object.keys(byModel);
-
   return (
     <section className="mt-3 mx-1 p-2 rounded-lg border border-grey-200 bg-midnight-ocean-400 text-white">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-semibold">Temporary diagnostics · this tab · last 5 per model</span>
+        <span className="text-xs font-semibold">Temporary diagnostics · last 5 prompts</span>
         <button className="text-[10px] text-glacier-400" onClick={clear}>Clear</button>
       </div>
-      <p className="text-[10px] text-grey-300 mb-2">Counts and processing status only, scoped to this tab. Prompt and response text are not stored; nothing is transmitted.</p>
-      {models.length === 0 ? (
-        <p className="text-[10px] text-grey-300">No prompts recorded yet on this tab. Send a new prompt while AI Wattch is active.</p>
+      <p className="text-[10px] text-grey-300 mb-2">Counts and processing status only. Prompt and response text are not stored.</p>
+      {traces.length === 0 ? (
+        <p className="text-[10px] text-grey-300">No prompts recorded yet. Send a new prompt while AI Wattch is active.</p>
       ) : (
         <div className="flex flex-col gap-2">
-          {models.map((model) => (
-            <ModelSection key={model} model={model} traces={byModel[model]} />
+          {traces.map((trace) => (
+            <div key={trace.traceId} className="border-t border-grey-200 pt-2 text-[10px]">
+              <div className="flex justify-between mb-1">
+                <strong>{trace.platform} · {new Date(trace.updatedAt).toLocaleTimeString()}</strong>
+                <span>{trace.inputTokens} in / {trace.outputTokens} out tokens</span>
+              </div>
+              <div className="text-grey-300 mb-1">{trace.inputChars} input chars · {trace.outputChars} output chars</div>
+              <div className="flex flex-wrap text-grey-100">
+                <Status
+                  label="User node"
+                  value={trace.userNodeFound === undefined ? "—" : trace.userNodeFound ? "found" : "NOT FOUND"}
+                />
+                <Status
+                  label="Assistant node"
+                  value={trace.assistantNodeFound === undefined ? "—" : trace.assistantNodeFound ? "found" : "NOT FOUND"}
+                />
+                <Status label="Sent" value={trace.sent === undefined ? "—" : trace.sent ? "yes" : "no"} />
+                <Status label="API" value={trace.calculation || "—"} />
+                <Status label="Saved" value={trace.saved === undefined ? "—" : trace.saved ? "yes" : "no"} />
+              </div>
+              {trace.energyKWh !== undefined && <div className="text-grey-300 mt-1">Energy: {trace.energyKWh.toExponential(3)} kWh</div>}
+              {trace.error && <div className="text-red-300 mt-1">{trace.error}</div>}
+            </div>
           ))}
         </div>
       )}
