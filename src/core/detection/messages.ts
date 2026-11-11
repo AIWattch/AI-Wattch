@@ -251,19 +251,23 @@ const ProcessResponse = (platform: SupportedPlatform) => {
     // ChatGPT runs at least two DOM variants concurrently (an experiment
     // bucket, confirmed not tied to browser) - one marks turns with
     // data-user-message-bubble / data-dil-response, the other still uses
-    // the older data-message-author-role. Try the newer markup first and
-    // fall back to the older one if neither side of it is present.
+    // the older data-message-author-role. Some sessions even mix the two
+    // (e.g. new-style assistant turns alongside old-style user turns), so
+    // each side falls back independently rather than treating it as one
+    // all-or-nothing variant.
     let allOutputNodes = document.querySelectorAll(
       "[data-dil-response]",
     ) as NodeListOf<HTMLElement>;
-    let allInputNodes = document.querySelectorAll(
-      "[data-user-message-bubble]",
-    ) as NodeListOf<HTMLElement>;
-
-    if (allOutputNodes.length === 0 && allInputNodes.length === 0) {
+    if (allOutputNodes.length === 0) {
       allOutputNodes = document.querySelectorAll(
         '[data-message-author-role="assistant"]',
       ) as NodeListOf<HTMLElement>;
+    }
+
+    let allInputNodes = document.querySelectorAll(
+      "[data-user-message-bubble]",
+    ) as NodeListOf<HTMLElement>;
+    if (allInputNodes.length === 0) {
       allInputNodes = document.querySelectorAll(
         '[data-message-author-role="user"]',
       ) as NodeListOf<HTMLElement>;
