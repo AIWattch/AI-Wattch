@@ -5,6 +5,7 @@ import { SessionsCard } from "./components/SessionsCard";
 
 import { useConsumptionData } from "../../shared/hooks/useConsumptionData";
 import { useCurrentPlatform } from "../../shared/hooks/useCurrentPlatform";
+import { DiagnosticsPanel } from "./components/DiagnosticsPanel";
 
 export const Dashboard: React.FC<{
   handleShowTips: () => void;
@@ -51,6 +52,7 @@ export const Dashboard: React.FC<{
           setIsExpanded={setIsTodaySessionExpanded}
         />
       </div>
+      <DiagnosticsPanel />
     </div>
   );
 };

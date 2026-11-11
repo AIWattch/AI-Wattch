@@ -17,6 +17,7 @@ import {
 import { MESSAGE_TYPES } from "../constants";
 import { fetchUserLocationInternal } from "../shared/utils/locationService";
 import { defaultConsumptionByPlatform } from "../shared/utils/defaults";
+import { updateDiagnostic } from "../shared/utils/diagnostics";
 
 console.log("Service worker started");
 
@@ -42,8 +43,15 @@ const processAIMetrics = async (
       }
 
       const consumption = await calculateConsumptionApi(metrics, settings);
+      await updateDiagnostic(metrics, {
+        calculation: consumption ? "success" : "no_result",
+        energyKWh: consumption?.energyKWh,
+      });
       if (consumption) {
         await addMetricsToSession({ ...metrics, ...consumption });
+        await updateDiagnostic(metrics, { saved: true });
+      } else {
+        await updateDiagnostic(metrics, { saved: false });
       }
     } else {
       const sessionData = await getTodaySessionData();
@@ -154,13 +162,39 @@ const notifyPopup = async (
   }
 };
 
+// Hosts the content script actually runs on (must match manifest content_scripts).
+const SUPPORTED_HOSTS = [
+  "chat.openai.com",
+  "chatgpt.com",
+  "claude.ai",
+  "gemini.google.com",
+];
+
+const isSupportedTabUrl = (url?: string): boolean => {
+  if (!url) return false;
+  try {
+    return SUPPORTED_HOSTS.some((host) => new URL(url).hostname.endsWith(host));
+  } catch {
+    return false;
+  }
+};
+
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-  if (changeInfo.status === "complete" && tab.url) {
-    await sendToContentScript({
-      tabId: tabId,
-      type: MESSAGE_TYPES.PLATFORM_CHANGED,
-      data: { url: tab.url },
-    });
+  // Only tabs matching the content script's host patterns actually have a
+  // listener; messaging any other tab throws "Could not establish
+  // connection. Receiving end does not exist." on every navigation.
+  if (changeInfo.status === "complete" && isSupportedTabUrl(tab.url)) {
+    try {
+      await sendToContentScript({
+        tabId: tabId,
+        type: MESSAGE_TYPES.PLATFORM_CHANGED,
+        data: { url: tab.url },
+      });
+    } catch (error) {
+      // Content script may not have attached its listener yet (race right
+      // after navigation) - not actionable, so don't spam the console.
+      console.log("AI Watch: Content script not ready for PLATFORM_CHANGED", tabId);
+    }
   }
 });
 

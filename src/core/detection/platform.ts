@@ -21,14 +21,16 @@ export const PLATFORM_CONFIGS: Record<SupportedPlatform, PlatformInfo> = {
     name: "ChatGPT",
     domain: "chatgpt.com",
     selectors: {
+      // ChatGPT runs two DOM variants concurrently (experiment bucket, not
+      // browser-specific) - keep both until one is confirmed fully retired.
       messages: [
+        "[data-dil-response]",
+        "[data-user-message-bubble]",
         "[data-message-author-role='assistant']",
         "[data-message-author-role='user']",
-        "[data-testid='conversation-turn-3']",
-        "[data-testid='conversation-turn-4']",
       ],
       input: ["#prompt-textarea", "[data-testid='textbox']"],
-      response: ["[data-message-author-role='assistant']"],
+      response: ["[data-dil-response]", "[data-message-author-role='assistant']"],
     },
     tokenEstimation: {
       factor: 0.25, // ~4 characters per token

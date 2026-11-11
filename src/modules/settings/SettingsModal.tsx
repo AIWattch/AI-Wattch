@@ -19,6 +19,7 @@ import {
   SETTINGS_KEY,
   updateSetting,
 } from "../../core";
+import { clearDiagnostics } from "../../shared/utils/diagnostics";
 import { detectModel } from "../../core/detection/model";
 import FlagIcon from "../../icons/FlagIcon";
 import { GeminiLogo } from "../../icons/GeminiLogo";
@@ -81,6 +82,21 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
     await resetSettings();
     detectModel();
     onClose();
+  };
+
+  // Applies immediately (not batched with the rest of this form) since it's
+  // a troubleshooting mode you flip on/off, not a calculation parameter.
+  const [diagnosticsResetFeedback, setDiagnosticsResetFeedback] =
+    useState(false);
+
+  const setDiagnosticsMode = async (enabled: boolean) => {
+    await updateSetting({ diagnosticsMode: enabled });
+  };
+
+  const resetDiagnosticsLocal = async () => {
+    await clearDiagnostics();
+    setDiagnosticsResetFeedback(true);
+    setTimeout(() => setDiagnosticsResetFeedback(false), 1500);
   };
 
   return (
@@ -291,6 +307,59 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
               )}
             />
           </div>
+        </div>
+
+        {/* Diagnostics Mode */}
+        <div className="bg-mist rounded-lg p-3">
+          <div className="flex items-center gap-2 mb-2">
+            <p className="text-xs leading-13 font-regular text-obsidian">
+              Diagnostics mode
+            </p>
+            <Tooltip
+              title={
+                <p className="max-w-[231px]">
+                  Shows per-prompt extraction and calculation status in the
+                  dashboard to help troubleshoot detection issues. Local
+                  only — diagnostics remain in browser storage; nothing is
+                  transmitted.
+                </p>
+              }
+            >
+              <InfoIcon size={16} className="text-grey-500" />
+            </Tooltip>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setDiagnosticsMode(false)}
+              className={`flex-1 h-8 px-3 rounded-full text-obsidian border-[0.5px] text-sm font-regular transition-colors ${
+                !settings?.diagnosticsMode
+                  ? "bg-glacier-500"
+                  : "bg-white hover:border-glacier-500"
+              }`}
+            >
+              Off
+            </button>
+            <button
+              onClick={() => setDiagnosticsMode(true)}
+              className={`flex-1 h-8 px-3 rounded-full text-obsidian border-[0.5px] text-sm font-regular transition-colors ${
+                settings?.diagnosticsMode
+                  ? "bg-glacier-500"
+                  : "bg-white hover:border-glacier-500"
+              }`}
+            >
+              On
+            </button>
+          </div>
+          <button
+            onClick={resetDiagnosticsLocal}
+            className="w-full h-8 mt-2 border border-midnight-ocean-500 rounded-full text-sm text-midnight-ocean-500 hover:bg-grey-100 transition-colors"
+          >
+            {diagnosticsResetFeedback ? "Cleared" : "Reset diagnostics"}
+          </button>
+          <p className="text-[10px] text-grey-500 mt-2">
+            Local only — diagnostics remain in browser storage; nothing is
+            transmitted.
+          </p>
         </div>
 
         {/* Action Buttons */}

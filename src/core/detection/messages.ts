@@ -6,6 +6,7 @@ import { detectModel } from "./model";
 import { SupportedPlatform } from "./platform";
 import { QueryMetric } from "../../shared/types";
 import { loadSettings } from "../storage";
+import { updateDiagnostic } from "../../shared/utils/diagnostics";
 
 // Init time-based variables
 let hasStarted: boolean = false;
@@ -247,22 +248,40 @@ const ProcessResponse = (platform: SupportedPlatform) => {
   };
 
   if (platform === "chatgpt") {
-    console.log("DEBUG: Came here 5");
-    const allOutputNodes = document.querySelectorAll(
-      '[data-message-author-role="assistant"]',
+    // ChatGPT runs at least two DOM variants concurrently (an experiment
+    // bucket, confirmed not tied to browser) - one marks turns with
+    // data-user-message-bubble / data-dil-response, the other still uses
+    // the older data-message-author-role. Some sessions even mix the two
+    // (e.g. new-style assistant turns alongside old-style user turns), so
+    // each side falls back independently rather than treating it as one
+    // all-or-nothing variant.
+    let allOutputNodes = document.querySelectorAll(
+      "[data-dil-response]",
     ) as NodeListOf<HTMLElement>;
-    const allInputNodes = document.querySelectorAll(
-      '[data-message-author-role="user"]',
-    ) as NodeListOf<HTMLElement>;
+    if (allOutputNodes.length === 0) {
+      allOutputNodes = document.querySelectorAll(
+        '[data-message-author-role="assistant"]',
+      ) as NodeListOf<HTMLElement>;
+    }
 
-    if (allOutputNodes.length !== 0 && allInputNodes.length !== 0) {
+    let allInputNodes = document.querySelectorAll(
+      "[data-user-message-bubble]",
+    ) as NodeListOf<HTMLElement>;
+    if (allInputNodes.length === 0) {
+      allInputNodes = document.querySelectorAll(
+        '[data-message-author-role="user"]',
+      ) as NodeListOf<HTMLElement>;
+    }
+
+    const assistantNodeFound = allOutputNodes.length !== 0;
+    const userNodeFound = allInputNodes.length !== 0;
+
+    if (assistantNodeFound && userNodeFound) {
       const outputNode = allOutputNodes[allOutputNodes.length - 1];
       const inputNode = allInputNodes[allInputNodes.length - 1];
 
       const outputText = outputNode.innerText;
       const inputText = inputNode.innerText;
-
-      console.log("DEBUG: Came here 6", { outputNode });
 
       const outputTokens = estimateTokens(outputText || "");
       const inputTokens = estimateTokens(inputText || "");
@@ -276,8 +295,15 @@ const ProcessResponse = (platform: SupportedPlatform) => {
         outputText,
         inputText,
       });
-      return sendObject;
+    } else {
+      console.warn("AI Wattch: ChatGPT extraction found no nodes", {
+        userNodeFound,
+        assistantNodeFound,
+      });
     }
+
+    void updateDiagnostic(sendObject, { userNodeFound, assistantNodeFound });
+    if (assistantNodeFound && userNodeFound) return sendObject;
   } else if (platform === "claude") {
     const allOutputNode = document.querySelectorAll(
       ".standard-markdown",
@@ -286,7 +312,10 @@ const ProcessResponse = (platform: SupportedPlatform) => {
       "[data-testid='user-message']",
     ) as NodeListOf<HTMLElement>;
 
-    if (allOutputNode.length !== 0 && allInputNode.length !== 0) {
+    const assistantNodeFound = allOutputNode.length !== 0;
+    const userNodeFound = allInputNode.length !== 0;
+
+    if (assistantNodeFound && userNodeFound) {
       const codeBlocks = hasCodeBlock
         ? (document.querySelectorAll(
             ".code-block__code",
@@ -316,16 +345,20 @@ const ProcessResponse = (platform: SupportedPlatform) => {
       sendObject.inputTokens = inputTokens;
       sendObject.inputTextLength = inputText.length;
       sendObject.outputTextLength = outputText.length;
-
-      return sendObject;
     }
+
+    void updateDiagnostic(sendObject, { userNodeFound, assistantNodeFound });
+    if (assistantNodeFound && userNodeFound) return sendObject;
   } else if (platform === "gemini") {
     const allOutputNodes = document.querySelectorAll(
       "model-response, message-content",
     );
     const allInputNodes = document.querySelectorAll("user-query");
 
-    if (allOutputNodes.length !== 0 && allInputNodes.length !== 0) {
+    const assistantNodeFound = allOutputNodes.length !== 0;
+    const userNodeFound = allInputNodes.length !== 0;
+
+    if (assistantNodeFound && userNodeFound) {
       const outputNode = allOutputNodes[
         allOutputNodes.length - 1
       ] as HTMLElement;
@@ -347,9 +380,10 @@ const ProcessResponse = (platform: SupportedPlatform) => {
         outputText,
         inputText,
       });
-
-      return sendObject;
     }
+
+    void updateDiagnostic(sendObject, { userNodeFound, assistantNodeFound });
+    if (assistantNodeFound && userNodeFound) return sendObject;
   }
 
   return sendObject;
