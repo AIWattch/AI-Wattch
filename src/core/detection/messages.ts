@@ -248,15 +248,26 @@ const ProcessResponse = (platform: SupportedPlatform) => {
   };
 
   if (platform === "chatgpt") {
-    // ChatGPT's DOM no longer exposes data-message-author-role; the current
-    // app shell marks turns with data-user-message-bubble (user) and
-    // data-dil-response (assistant), confirmed against the live site.
-    const allOutputNodes = document.querySelectorAll(
+    // ChatGPT runs at least two DOM variants concurrently (an experiment
+    // bucket, confirmed not tied to browser) - one marks turns with
+    // data-user-message-bubble / data-dil-response, the other still uses
+    // the older data-message-author-role. Try the newer markup first and
+    // fall back to the older one if neither side of it is present.
+    let allOutputNodes = document.querySelectorAll(
       "[data-dil-response]",
     ) as NodeListOf<HTMLElement>;
-    const allInputNodes = document.querySelectorAll(
+    let allInputNodes = document.querySelectorAll(
       "[data-user-message-bubble]",
     ) as NodeListOf<HTMLElement>;
+
+    if (allOutputNodes.length === 0 && allInputNodes.length === 0) {
+      allOutputNodes = document.querySelectorAll(
+        '[data-message-author-role="assistant"]',
+      ) as NodeListOf<HTMLElement>;
+      allInputNodes = document.querySelectorAll(
+        '[data-message-author-role="user"]',
+      ) as NodeListOf<HTMLElement>;
+    }
 
     const assistantNodeFound = allOutputNodes.length !== 0;
     const userNodeFound = allInputNodes.length !== 0;
