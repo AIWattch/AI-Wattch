@@ -443,6 +443,12 @@ export const LLM_MODELS: ModelInfo[] = [
     modelId: "claude-sonnet-4-6",
   },
   {
+    modelName: "Claude Fable 5.2",
+    detectionName: "Fable 5.2",
+    platform: "claude",
+    modelId: "claude-fable-5-2",
+  },
+  {
     modelName: "Claude Haiku 5.5",
     detectionName: "Haiku 5.5",
     platform: "claude",
@@ -549,6 +555,30 @@ export const LLM_MODELS: ModelInfo[] = [
     detectionName: "Gemini 3.5 Flash",
     platform: "gemini",
     modelId: "gemini-3.5-flash",
+  },
+  {
+    modelName: "Gemini 4 Hydrogen",
+    detectionName: "Everyday help",
+    platform: "gemini",
+    modelId: "gemini-4-hydrogen",
+  },
+  {
+    modelName: "Gemini 4 Neon",
+    detectionName: "Deeper analysis",
+    platform: "gemini",
+    modelId: "gemini-4-neon",
+  },
+  {
+    modelName: "Gemini 4 Carbon",
+    detectionName: "Most complex work",
+    platform: "gemini",
+    modelId: "gemini-4-carbon",
+  },
+  {
+    modelName: "Gemini 4 Argon",
+    detectionName: "Code & analysis",
+    platform: "gemini",
+    modelId: "gemini-4-argon",
   },
   {
     modelName: "Gemini 4 Argon",

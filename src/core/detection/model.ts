@@ -72,7 +72,8 @@ const detectGeminiModel = (): ModelInfo | null => {
       LLM_MODELS.find(
         (model) =>
           model.platform === "gemini" &&
-          model.modelName === `Gemini ${normalizedLabel}`,
+          (model.modelName === `Gemini ${normalizedLabel}` ||
+            model.detectionName === normalizedLabel),
       ) || null
     );
   };
